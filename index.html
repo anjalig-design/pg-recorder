@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PG Voice Note</title>
+<meta name="robots" content="noindex">
+<style>
+/* Pop-out recorder for the PG Session Operations portal. Speech → English text, on this laptop. Nothing is uploaded or stored. */
+:root { --bg:#f4f6f9; --surface:#fff; --line:#d9dee7; --fg:#18202e; --muted:#5a6476; --accent:#2c4a8a; --accent-fg:#fff; --rec:#b3383a; --ok:#2e7d4f; --warn-soft:#fbefd9; --warn:#7a4e0c; --err-soft:#f8e1e1; }
+@media (prefers-color-scheme: dark) { :root { --bg:#11151c; --surface:#19202a; --line:#2e3846; --fg:#e6eaf1; --muted:#a3adbe; --accent:#8eaaf0; --accent-fg:#0f1726; --rec:#ef8a8a; --ok:#6cc391; --warn-soft:#3a2c13; --warn:#e3ad55; --err-soft:#3d1d1f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+main { max-width: 520px; margin: 0 auto; padding: 18px 16px 28px; display: grid; gap: 14px; }
+h1 { font-size: 1.15rem; margin: 0; }
+.muted { color: var(--muted); } .small { font-size: .86rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; }
+button, select, textarea { font: inherit; color: inherit; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 14px; cursor: pointer; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.rec { background: var(--rec); color: #fff; border-color: var(--rec); font-size: 1.05rem; padding: 14px 22px; border-radius: 999px; }
+.btn:disabled { opacity: .55; cursor: default; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+textarea { width: 100%; min-height: 120px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--bg); }
+select { border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; background: var(--surface); }
+.note { border-radius: 8px; padding: 9px 11px; font-size: .9rem; }
+.note.warn { background: var(--warn-soft); color: var(--warn); } .note.err { background: var(--err-soft); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; } .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fff; margin-right: 8px; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div><h1>Voice note</h1><div class="small muted">Speak in any language — you get English text. Your voice stays on this laptop: nothing is uploaded or saved.</div></div>
+  <div class="card">
+    <div class="row"><button type="button" class="btn rec" id="rec">● Record</button><span id="timer" class="muted" aria-live="polite"></span></div>
+    <div id="status" class="small muted" aria-live="polite"></div>
+    <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+    <div id="msg"></div>
+  </div>
+  <div class="card" id="result" hidden>
+    <div class="small muted">Check the English text. Fix any misheard word, then send it to the portal.</div>
+    <textarea id="text" aria-label="English text"></textarea>
+    <div class="row">
+      <button type="button" class="btn primary" id="use">Use this text</button>
+      <button type="button" class="btn" id="again">Record again</button>
+      <button type="button" class="btn" id="copy">Copy</button>
+    </div>
+    <div id="sent" class="small muted"></div>
+  </div>
+  <div class="small muted">First use only: the speech model (about 75 MB) downloads once and is then kept on this laptop.</div>
+</main>
+<script type="module">
+// Settings arrive in the address after "#": n = request id from the portal, m = Whisper model, mock = 1 (testing only).
+const P = new URLSearchParams(location.hash.slice(1));
+const NONCE = P.get('n') || '', MODEL = P.get('m') || 'Xenova/whisper-base', MOCK = P.get('mock') === '1';
+const LIB = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+const $ = (id) => document.getElementById(id);
+let pipe = null, loading = null, mr = null, chunks = [], timer = null, secs = 0, stream = null;
+
+function status(t) { $('status').textContent = t || ''; }
+function message(t, kind) { $('msg').innerHTML = t ? '<div class="note ' + (kind || 'warn') + '">' + t + '</div>' : ''; }
+function progress(p) { $('bar').hidden = p === null; $('barFill').style.width = (p || 0) + '%'; }
+
+function loadWhisper() {
+  if (pipe) return Promise.resolve(pipe);
+  if (loading) return loading;
+  const seen = {};
+  loading = import(LIB).then((T) => {
+    T.env.allowLocalModels = false;
+    return T.pipeline('automatic-speech-recognition', MODEL, {
+      progress_callback: (p) => {
+        if (p && p.status === 'progress' && p.file) {
+          seen[p.file] = p.progress || 0;
+          const v = Object.values(seen); const pct = Math.round(v.reduce((a, b) => a + b, 0) / v.length);
+          status('Getting the speech model ready (first time only)… ' + pct + '%'); progress(pct);
+        }
+      }
+    });
+  }).then((p) => { pipe = p; progress(null); return p; }, (e) => { loading = null; progress(null); throw e; });
+  return loading;
+}
+// Start downloading the model straight away so it is ready by the time the PG stops speaking.
+if (!MOCK) loadWhisper().then(() => { if (!mr) status('Ready.'); }).catch(() => {});
+
+async function to16k(blob) {
+  const buf = await blob.arrayBuffer();
+  const Ctx = window.AudioContext || window.webkitAudioContext; const ctx = new Ctx({ sampleRate: 16000 });
+  const ab = await ctx.decodeAudioData(buf); const d = ab.getChannelData(0); try { ctx.close(); } catch (e) {} return d;
+}
+
+async function transcribe(blob) {
+  if (MOCK) return 'He was attentive and finished the activity, but needed help with the second step.';
+  const p = await loadWhisper();
+  status('Writing it down in English (on this laptop)…');
+  const audio = await to16k(blob);
+  // No language is set: Whisper detects whatever language the PG speaks and translates it to English.
+  const out = await p(audio, { task: 'translate', chunk_length_s: 30, stride_length_s: 5 });
+  return String((out && out.text) || '').trim();
+}
+
+async function start() {
+  message(''); $('result').hidden = true; $('sent').textContent = '';
+  if (MOCK) { showText(await transcribe(null)); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { message('The microphone is blocked. Click the icon left of the address, allow <b>Microphone</b>, then press Record again.', 'err'); return; }
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); chunks = [];
+  mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop()); clearInterval(timer); $('timer').textContent = '';
+    const blob = new Blob(chunks, { type: mr.mimeType || mime || 'audio/webm' }); chunks = []; mr = null;
+    $('rec').disabled = true; $('rec').textContent = '● Record';
+    try { showText(await transcribe(blob)); }
+    catch (e) { message('Voice to text did not work on this laptop (' + (e && e.message ? e.message : e) + '). Please type the note in the portal instead.', 'err'); }
+    finally { $('rec').disabled = false; status(''); }
+  };
+  secs = 0; timer = setInterval(() => { secs++; $('timer').textContent = secs + 's'; if (secs >= 300) mr && mr.stop(); }, 1000);
+  mr.start(1000); $('rec').innerHTML = '<span class="dot"></span>Stop'; status('Listening… press Stop when you are done.');
+}
+
+function showText(t) {
+  if (!t) { message('No speech was heard. Try again a little closer to the microphone.'); return; }
+  $('text').value = t; $('result').hidden = false; $('text').focus();
+}
+
+$('rec').addEventListener('click', () => { if (mr && mr.state !== 'inactive') mr.stop(); else start(); });
+$('again').addEventListener('click', () => start());
+$('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('text').value); $('sent').textContent = 'Copied — paste it into the portal.'; } catch (e) { $('text').select(); $('sent').textContent = 'Press Ctrl+C to copy.'; } });
+$('use').addEventListener('click', () => {
+  const text = $('text').value.trim(); if (!text) return;
+  // Only the text the PG approved goes back, and only to the portal window that opened this one.
+  if (window.opener && !window.opener.closed && NONCE) {
+    window.opener.postMessage({ type: 'pg-voice', nonce: NONCE, text, model: MODEL }, '*');
+    $('sent').textContent = 'Sent to the portal. This window will close.';
+    setTimeout(() => window.close(), 700);
+  } else {
+    $('sent').textContent = 'The portal window could not be reached. Press Copy, then paste the text into the portal.';
+  }
+});
+</script>
+</body>
+</html>
