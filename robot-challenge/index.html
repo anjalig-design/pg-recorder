@@ -32,6 +32,8 @@ button{font-family:inherit;font-size:inherit;cursor:pointer}
 .opt:hover{border-color:var(--violet)}
 .opt:active{transform:scale(.97)}
 .opt.sel{border-color:var(--violet);background:var(--violet-soft)}
+.opts.codeopts{grid-template-columns:1fr}
+.opt.mono{font-family:"JetBrains Mono",ui-monospace,monospace;text-align:left;white-space:pre;overflow-x:auto;font-size:26px;padding:16px 22px}
 .opt.good{border-color:var(--green);background:var(--green-soft)}
 .opt.bad{border-color:var(--red);background:var(--red-soft)}
 .big{font-size:40px;letter-spacing:6px;text-align:center;margin:6px 0 18px}
@@ -239,7 +241,7 @@ function show(){
   };
 
   if(q.type==='mcq'||q.type==='survey'){
-    body.innerHTML=`<div class="${q.emoji?'emoji-row':'opts'}">${q.opts.map((o,i)=>`<button class="opt ${q.mono?'mono':''}" data-i="${i}">${o}</button>`).join('')}</div>`;
+    body.innerHTML=`<div class="${q.emoji?'emoji-row':'opts'+(q.mono?' codeopts':'')}">${q.opts.map((o,i)=>`<button class="opt ${q.mono?'mono':''}" data-i="${i}">${o}</button>`).join('')}</div>`;
     const btns=[...body.querySelectorAll('.opt')];
     btns.forEach(b=>b.onclick=()=>{
       const v=q.opts[+b.dataset.i];
