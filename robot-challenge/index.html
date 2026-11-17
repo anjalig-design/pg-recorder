@@ -358,10 +358,24 @@ function finish(){
   const go=()=>{if(document.getElementById('pin').value.trim()==='2468')teacher();else{document.getElementById('pf').textContent='Wrong PIN';document.getElementById('pin').value=''}};
   document.getElementById('tv').onclick=go;
   document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+  sendToTeacher();
 }
 
-function teacher(){
-  document.getElementById('topbar').classList.add('hidden');
+/* Sends the report to the teacher's private ntfy.sh page. The topic comes from the link the
+   teacher shares (…/robot-challenge/#r-CODE), so it never appears in the public page source. */
+function teacherTopic(){const m=(location.hash||'').match(/^#r-([A-Za-z0-9-]{6,64})$/);return m?'rbc-'+m[1]:null}
+async function sendToTeacher(attempt=1){
+  const topic=teacherTopic(); if(!topic||st.sent) return;
+  const {title,report}=teacher(true);
+  const body=report.split('\n').map(l=>l.length>160?l.slice(0,157)+'...':l).join('\n').slice(0,3900);
+  try{
+    const r=await fetch('https://ntfy.sh/'+topic+'?title='+encodeURIComponent(title)+'&tags=robot',{method:'POST',body});
+    if(!r.ok) throw new Error(r.status);
+    st.sent=true; save();
+  }catch(e){ if(attempt<4) setTimeout(()=>sendToTeacher(attempt+1),3000*attempt); }
+}
+
+function teacher(sendOnly){
   const R=st.res, get=id=>R[id]||{points:0,ms:0,attempts:0,answers:[]};
   const skills={};
   QUESTIONS.filter(scored).forEach(q=>{const s=skills[q.skill]||(skills[q.skill]={pts:0,max:0,first:0,n:0,ms:0});const r=get(q.id);s.pts+=r.points||0;s.max+=2;s.n++;s.ms+=r.ms||0;if(r.points===2)s.first++});
@@ -413,6 +427,8 @@ function teacher(){
    ...ty.map(t=>`Typing "${t.target}" → "${t.typed}" (${t.accuracy}%, ${t.cpm} cpm, ${t.backspaces} backspaces)`)
   ].join('\n');
 
+  if(sendOnly) return {title:`Robot Brain Challenge: ${st.name}${st.age?' ('+st.age+')':''} - ${v}`, report};
+  document.getElementById('topbar').classList.add('hidden');
   stage.innerHTML=`
    <div class="t-h">Teacher report — ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
    <div class="t-sub">Finished in ${totalMin} min · Points: 2 = right first try, 1 = right on second try, 0 = not right</div>
