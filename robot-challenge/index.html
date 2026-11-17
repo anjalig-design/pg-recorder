@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Brain Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF8EC; --ink:#22223B; --muted:#6B6B80; --card:#FFFFFF;
+  --violet:#6C4CF1; --violet-soft:#ECE7FF; --green:#1FA971; --green-soft:#DDF6EA;
+  --red:#E5484D; --red-soft:#FDE5E6; --yellow:#FFC83D; --line:#E9E3D6;
+  --event:#C2185B; --loop:#2E9E4F; --basic:#1E6FD9; --logic:#008B8B; --var:#E2711D;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Baloo 2",system-ui,sans-serif;font-size:20px;line-height:1.35}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:20px 18px 60px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.top .logo{font-size:30px}
+.top h1{font-size:22px;margin:0;font-weight:800}
+.bar{flex:1;height:14px;background:#F0E8D8;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),#9B7BFF);width:0;transition:width .4s}
+.stars{font-weight:800;color:#B7791F;white-space:nowrap}
+.card{background:var(--card);border-radius:24px;padding:26px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(34,34,59,.06)}
+.tag{display:inline-block;font-size:15px;font-weight:700;padding:3px 12px;border-radius:99px;background:var(--violet-soft);color:var(--violet);margin-bottom:8px}
+.q{font-size:26px;font-weight:800;margin:4px 0 18px}
+.hint{color:var(--muted);font-size:17px;margin:-10px 0 16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.opt{background:#fff;border:3px solid var(--line);border-radius:18px;padding:16px;font-size:24px;font-weight:700;min-height:70px;transition:transform .1s}
+.opt:hover{border-color:var(--violet)}
+.opt:active{transform:scale(.97)}
+.opt.sel{border-color:var(--violet);background:var(--violet-soft)}
+.opt.good{border-color:var(--green);background:var(--green-soft)}
+.opt.bad{border-color:var(--red);background:var(--red-soft)}
+.big{font-size:40px;letter-spacing:6px;text-align:center;margin:6px 0 18px}
+.btn{background:var(--violet);color:#fff;border:0;border-radius:16px;padding:14px 28px;font-weight:800;font-size:22px;box-shadow:0 4px 0 #4B32C3}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #4B32C3}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:#fff;color:var(--violet);border:2px solid var(--violet);box-shadow:none}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.fb{font-weight:800;font-size:22px;min-height:32px;margin-top:14px}
+.fb.good{color:var(--green)} .fb.bad{color:var(--red)}
+input.txt{font-family:inherit;font-size:26px;padding:12px 16px;border:3px solid var(--line);border-radius:16px;width:100%;max-width:340px;outline:none}
+input.txt:focus{border-color:var(--violet)}
+input.mono,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.typebox{width:100%;max-width:none;font-size:24px}
+.target{font-family:"JetBrains Mono",monospace;font-size:28px;background:#22223B;color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:14px;display:inline-block}
+/* blocks */
+.prog{display:inline-flex;flex-direction:column;gap:4px;margin:4px 0 16px;font-size:20px}
+.blk{color:#fff;font-weight:700;padding:8px 14px;border-radius:10px;display:inline-block;width:max-content;border:3px solid transparent}
+.blk.event{background:var(--event);border-radius:16px 16px 10px 10px}
+.blk.loop{background:var(--loop)} .blk.basic{background:var(--basic)} .blk.logic{background:var(--logic)} .blk.var{background:var(--var)}
+.blk .slot{background:#fff;color:var(--ink);border-radius:99px;padding:0 10px;margin:0 4px}
+.ind{margin-left:26px}
+.blk.tap{cursor:pointer}
+.blk.tap:hover{border-color:var(--yellow)}
+.blk.pick{border-color:var(--yellow);box-shadow:0 0 0 3px #fff inset}
+.code{font-family:"JetBrains Mono",monospace;background:#22223B;color:#F8F8F2;border-radius:16px;padding:16px 20px;font-size:22px;white-space:pre;overflow:auto;margin-bottom:16px}
+.code .k{color:#FF79C6}.code .s{color:#F1FA8C}.code .n{color:#BD93F9}.code .f{color:#8BE9FD}
+/* match */
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col{display:flex;flex-direction:column;gap:10px}
+.mi{border:3px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-size:19px;font-weight:700;text-align:left;min-height:62px}
+.mi.sel{border-color:var(--violet);background:var(--violet-soft)}
+.mi.done{border-color:var(--green);background:var(--green-soft);cursor:default}
+.mi.wrong{border-color:var(--red);background:var(--red-soft)}
+.mi .blk{font-size:17px;padding:4px 10px}
+/* order */
+.pool,.built{display:flex;flex-direction:column;gap:8px;min-height:60px;padding:12px;border-radius:16px}
+.pool{background:#F7F2E7}
+.built{border:3px dashed var(--line);margin-top:12px}
+.built .num{color:var(--muted);font-weight:800;margin-right:8px}
+.center{text-align:center}
+.emoji-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.emoji-row .opt{font-size:46px;min-width:96px}
+.hidden{display:none!important}
+/* teacher */
+.t-h{font-size:24px;font-weight:800;margin:0 0 6px}
+.t-sub{color:var(--muted);font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:#F7F2E7;border-radius:14px;padding:12px}
+.kpi b{display:block;font-size:28px}
+.kpi span{font-size:15px;color:var(--muted)}
+.verdict{border-radius:16px;padding:16px;margin-bottom:18px;font-size:18px}
+.verdict.up{background:var(--violet-soft)} .verdict.same{background:var(--green-soft)} .verdict.sup{background:#FFF1CC} .verdict.more{background:#EEE}
+.verdict h3{margin:0 0 6px;font-size:22px}
+table{width:100%;border-collapse:collapse;font-size:15px;font-family:system-ui,sans-serif}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.pill{font-weight:700;border-radius:99px;padding:1px 8px;font-size:13px}
+.p2{background:var(--green-soft);color:#11724B}.p1{background:#FFF1CC;color:#8A5A00}.p0{background:var(--red-soft);color:#A1262A}
+.sec{font-family:"Baloo 2";font-size:20px;font-weight:800;margin:20px 0 8px}
+.small{font-size:14px;color:var(--muted);font-family:system-ui,sans-serif}
+textarea.report{width:100%;height:160px;font-family:ui-monospace,monospace;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .35s ease-out}
+@media (max-width:520px){.q{font-size:22px}.match{grid-template-columns:1fr}.code{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top" id="topbar">
+    <div class="logo">🤖</div>
+    <h1>Robot Brain Challenge</h1>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="stars" id="stars">⭐ 0</div>
+  </div>
+  <div class="card" id="stage"></div>
+</div>
+
+<script>
+/* ---------- Question bank ---------- */
+const B = (cls, html) => `<span class="blk ${cls}">${html}</span>`;
+const S = t => `<span class="slot">${t}</span>`;
+
+const QUESTIONS = [
+ // A. Thinking puzzles (harder than the S1 form, which she aced)
+ {id:'a1',sec:'Thinking',skill:'Reasoning',type:'mcq',q:'What comes next?',big:'1, 4, 9, 16, ?',opts:['20','25','24','32'],ans:'25'},
+ {id:'a2',sec:'Thinking',skill:'Reasoning',type:'mcq',q:'What comes next?',big:'3, 6, 12, 24, ?',opts:['30','36','48','27'],ans:'48'},
+ {id:'a3',sec:'Thinking',skill:'Reasoning',type:'mcq',q:'What comes next?',big:'🔺 🟦 🟦 🔺 🟦 🟦 🔺 ?',opts:['🔺','🟦','🟢'],ans:'🟦'},
+ {id:'a4',sec:'Thinking',skill:'Reasoning',type:'mcq',q:'Tom is taller than Mia. Mia is taller than Raj. Who is the shortest?',opts:['Tom','Mia','Raj'],ans:'Raj'},
+ {id:'a5',sec:'Thinking',skill:'Reasoning',type:'mcq',q:'IF it is raining, take an umbrella. OTHERWISE, wear a cap. Today is sunny ☀️. What do you take?',opts:['☂️ Umbrella','🧢 Cap','Both'],ans:'🧢 Cap'},
+
+ // B. Block coding (T0 concepts)
+ {id:'b1',sec:'Blocks',skill:'Block concepts',type:'match',q:'Match each block to what it does.',hint:'Tap a block, then tap its meaning.',
+  pairs:[
+   [B('loop','forever'),'Keeps doing it again and again, never stops'],
+   [B('loop','repeat '+S('3')+' times'),'Does it 3 times, then stops'],
+   [B('event','on button A pressed'),'Starts when you press A'],
+   [B('logic','if … then'),'Checks something and decides'],
+   [B('basic','pause '+S('1000')+' ms'),'Waits a little bit'],
+  ]},
+ {id:'b2',sec:'Blocks',skill:'Block concepts',type:'mcq',q:'How many hearts will the micro:bit show?',
+  prog:`<div class="prog">${B('event','on start')}<div class="ind prog">${B('loop','repeat '+S('3')+' times')}<div class="ind prog">${B('basic','show icon ❤️')}${B('basic','pause '+S('500')+' ms')}${B('basic','clear screen')}</div></div></div>`,
+  opts:['1','3','Forever','0'],ans:'3'},
+ {id:'b3',sec:'Blocks',skill:'Block concepts',type:'fill',q:'Your robot must jump 4 times and then stop. Fill in the number.',
+  prog:`<div class="prog">${B('loop','repeat '+S('?')+' times')}<div class="ind prog">${B('basic','jump 🦘')}</div></div>`,ans:['4'],numeric:true},
+ {id:'b4',sec:'Blocks',skill:'Block concepts',type:'mcq',q:'You want an LED to blink and NEVER stop. Which block do you need?',
+  opts:[B('loop','repeat 2 times'),B('loop','forever'),B('event','on button A pressed'),B('basic','show number')],ans:B('loop','forever')},
+ {id:'b5',sec:'Blocks',skill:'Block concepts',type:'order',q:'Build it! When A is pressed: show 😊, wait, then show 😢.',hint:'Tap the blocks in the right order.',
+  items:[B('event','on button A pressed'),B('basic','show icon 😊'),B('basic','pause '+S('1000')+' ms'),B('basic','show icon 😢')]},
+
+ // C. Debugging and variables
+ {id:'c1',sec:'Bug hunt',skill:'Debugging',type:'tapbug',q:'🐞 I want a smiley when I press A. But it does not work! Tap the wrong block.',
+  blocks:[{h:B('event','on button B pressed'),bug:true},{h:B('basic','show icon 😊'),ind:true}]},
+ {id:'c2',sec:'Bug hunt',skill:'Debugging',type:'tapbug',q:'🐞 This should show the heart 5 times, but it only shows it 2 times. Tap the wrong block.',
+  blocks:[{h:B('event','on start')},{h:B('loop','repeat '+S('2')+' times'),bug:true,ind:true},{h:B('basic','show icon ❤️'),ind:2},{h:B('basic','pause '+S('500')+' ms'),ind:2}]},
+ {id:'c3',sec:'Bug hunt',skill:'Debugging',type:'fill',q:'A counter starts at 0. Every time you press A, it adds 1. You press A three times. What number does it show?',
+  prog:`<div class="prog">${B('event','on start')}<div class="ind prog">${B('var','set count to '+S('0'))}</div>${B('event','on button A pressed')}<div class="ind prog">${B('var','change count by '+S('1'))}${B('basic','show number count')}</div></div>`,ans:['3'],numeric:true},
+
+ // D. Text code peek (T1 readiness)
+ {id:'d1',sec:'Robot code',skill:'Text code',type:'fill',q:'Real programmers type code! What will this print?',
+  code:'<span class="n">x</span> = <span class="n">5</span>\n<span class="f">print</span>(x + <span class="n">3</span>)',ans:['8'],numeric:true},
+ {id:'d2',sec:'Robot code',skill:'Text code',type:'fill',q:'How many times will it print Hi?',
+  code:'<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">3</span>):\n    <span class="f">print</span>(<span class="s">"Hi"</span>)',ans:['3'],numeric:true},
+ {id:'d3',sec:'Robot code',skill:'Text code',type:'mcq',q:'What will this print?',
+  code:'<span class="n">x</span> = <span class="n">5</span>\n<span class="k">if</span> x > <span class="n">3</span>:\n    <span class="f">print</span>(<span class="s">"big"</span>)\n<span class="k">else</span>:\n    <span class="f">print</span>(<span class="s">"small"</span>)',opts:['big','small','5','nothing'],ans:'big'},
+ {id:'d4',sec:'Robot code',skill:'Text code',type:'mcq',q:'Which line correctly shows the word Hello?',
+  opts:['print("Hello")','Print Hello','print(Hello','show "Hello"'],ans:'print("Hello")',mono:true},
+
+ // E. Typing
+ {id:'e1',sec:'Typing',skill:'Typing',type:'type',q:'Type this exactly, then press Enter.',target:'I love robots'},
+ {id:'e2',sec:'Typing',skill:'Typing',type:'type',q:'Now type real code! Watch the brackets and quotes.',target:'print("Hello {NAME}")'},
+ {id:'e3',sec:'Typing',skill:'Typing',type:'type',q:'One more line of code!',target:'for i in range(3):'},
+
+ // F. About you
+ {id:'f1',sec:'About you',skill:'Feelings',type:'survey',q:'How did you feel doing this?',opts:['😃','🙂','😐','😟'],emoji:true},
+ {id:'f2',sec:'About you',skill:'Feelings',type:'survey',q:'Which part was the HARDEST?',opts:['🧩 Puzzles','🧱 Blocks','🐞 Bug hunt','💻 Robot code','⌨️ Typing']},
+ {id:'f3',sec:'About you',skill:'Feelings',type:'survey',q:'Would you like to type real code like programmers do?',opts:['Yes! 🚀','Maybe 🤔','Not yet 🙈']},
+];
+
+/* ---------- State ---------- */
+let st = {name:'',age:'',startedAt:null,endedAt:null,idx:-1,res:{}};
+function save(){try{localStorage.setItem('rbc_state',JSON.stringify(st))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('rbc_state')||'null');if(s&&s.idx>=0&&!s.endedAt)return s}catch(e){}return null}
+
+const stage = document.getElementById('stage');
+const now = ()=>performance.timeOrigin+performance.now();
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip = h=>h.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+const scored = q=>!['survey'].includes(q.type);
+
+function updateTop(){
+  const done = Object.keys(st.res).length;
+  document.getElementById('prog').style.width = (done/QUESTIONS.length*100)+'%';
+  const stars = Object.values(st.res).reduce((a,r)=>a+(r.points||0),0);
+  document.getElementById('stars').textContent = '⭐ '+stars;
+}
+
+/* ---------- Screens ---------- */
+function startScreen(resume){
+  stage.innerHTML = `
+   <div class="center pop">
+    <div style="font-size:64px">🤖✨</div>
+    <div class="q">Hi! Ready for the Robot Brain Challenge?</div>
+    <p class="hint" style="margin:0 0 18px">Puzzles, blocks, bug hunts and real robot code. Take your time and do your best!</p>
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+      <input class="txt" id="nm" placeholder="Your first name" autocomplete="off" maxlength="20">
+      <input class="txt" id="ag" placeholder="Your age" inputmode="numeric" maxlength="3" style="max-width:160px">
+      <button class="btn" id="go">Let's go! 🚀</button>
+      ${resume?'<button class="btn ghost" id="res">Continue where I stopped</button>':''}
+    </div>
+   </div>`;
+  const nm=document.getElementById('nm');nm.focus();
+  document.getElementById('go').onclick=()=>{
+    const n=nm.value.trim(); if(!n){nm.style.borderColor='var(--red)';nm.focus();return}
+    st={name:n,age:document.getElementById('ag').value.trim(),startedAt:now(),endedAt:null,idx:0,res:{}};
+    save(); show();
+  };
+  nm.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ag').focus()});
+  if(resume)document.getElementById('res').onclick=()=>{st=resume;show()};
+}
+
+function show(){
+  updateTop();
+  if(st.idx>=QUESTIONS.length) return finish();
+  const q = QUESTIONS[st.idx];
+  const t0 = now();
+  const r = {id:q.id,attempts:0,points:0,correct:false,firstKeyMs:null,answers:[]};
+  const head = `<div class="tag">${q.sec} · ${st.idx+1} of ${QUESTIONS.length}</div><div class="q">${q.q}</div>${q.hint?`<div class="hint">${q.hint}</div>`:''}${q.big?`<div class="big">${q.big}</div>`:''}${q.prog||''}${q.code?`<div class="code">${q.code}</div>`:''}`;
+  stage.innerHTML = `<div class="pop">${head}<div id="body"></div><div class="fb" id="fb"></div><div class="row" id="nav"></div></div>`;
+  const body=document.getElementById('body'), fb=document.getElementById('fb'), nav=document.getElementById('nav');
+
+  const finishQ = (correct)=>{
+    r.ms = Math.round(now()-t0); r.correct=correct;
+    r.points = correct ? (r.attempts===1?2:1) : 0;
+    st.res[q.id]=r; save(); updateTop();
+    nav.innerHTML=`<button class="btn" id="nx">${st.idx===QUESTIONS.length-1?'Submit ✅':'Next ➜'}</button>`;
+    const nx=document.getElementById('nx');
+    nx.onclick=()=>{st.idx++;save();show()};
+  };
+  const judge = (ok, onRetry, revealText)=>{
+    r.attempts++;
+    if(ok){fb.className='fb good';fb.textContent=r.attempts===1?'✅ Awesome!':'✅ Got it!';finishQ(true);return}
+    if(r.attempts<2){fb.className='fb bad';fb.textContent='🤔 Not quite. Try once more!';onRetry&&onRetry();return}
+    fb.className='fb bad';fb.innerHTML='👍 Good try! '+(revealText?'The answer is: <b>'+revealText+'</b>':'');finishQ(false);
+  };
+
+  if(q.type==='mcq'||q.type==='survey'){
+    body.innerHTML=`<div class="${q.emoji?'emoji-row':'opts'}">${q.opts.map((o,i)=>`<button class="opt ${q.mono?'mono':''}" data-i="${i}">${o}</button>`).join('')}</div>`;
+    const btns=[...body.querySelectorAll('.opt')];
+    btns.forEach(b=>b.onclick=()=>{
+      const v=q.opts[+b.dataset.i];
+      if(q.type==='survey'){r.answers.push(strip(v));btns.forEach(x=>x.disabled=true);b.classList.add('sel');r.attempts=1;r.ms=Math.round(now()-t0);r.points=0;r.correct=null;st.res[q.id]=r;save();updateTop();
+        nav.innerHTML=`<button class="btn" id="nx">${st.idx===QUESTIONS.length-1?'Submit ✅':'Next ➜'}</button>`;document.getElementById('nx').onclick=()=>{st.idx++;save();show()};return}
+      r.answers.push(strip(v));
+      const ok = v===q.ans;
+      b.classList.add(ok?'good':'bad'); b.disabled=true;
+      judge(ok,null,strip(q.ans));
+      if(ok||r.attempts>=2){btns.forEach(x=>x.disabled=true);btns.find(x=>q.opts[+x.dataset.i]===q.ans).classList.add('good')}
+    });
+  }
+
+  if(q.type==='fill'){
+    body.innerHTML=`<div class="row" style="margin-top:0"><input class="txt" id="in" ${q.numeric?'inputmode="numeric"':''} autocomplete="off" placeholder="Type your answer"><button class="btn" id="ck">Check</button></div>`;
+    const inp=document.getElementById('in');inp.focus();
+    inp.addEventListener('input',()=>{if(r.firstKeyMs===null)r.firstKeyMs=Math.round(now()-t0)},{once:true});
+    const check=()=>{const v=inp.value.trim().toLowerCase();if(!v)return;r.answers.push(v);
+      const ok=q.ans.includes(v); judge(ok,()=>{inp.value='';inp.focus()},q.ans[0]);
+      if(ok||r.attempts>=2){inp.disabled=true;document.getElementById('ck').disabled=true}};
+    document.getElementById('ck').onclick=check;
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();check()}});
+  }
+
+  if(q.type==='tapbug'){
+    body.innerHTML=`<div class="prog">${q.blocks.map((b,i)=>`<div style="margin-left:${(b.ind===2?52:b.ind?26:0)}px"><span class="tap-wrap" data-i="${i}">${b.h.replace('class="blk ','class="blk tap ')}</span></div>`).join('')}</div>`;
+    const els=[...body.querySelectorAll('.tap-wrap')];
+    els.forEach(el=>el.onclick=()=>{
+      if(r.correct||r.attempts>=2)return;
+      const b=q.blocks[+el.dataset.i]; r.answers.push(strip(b.h));
+      el.firstElementChild.classList.add('pick');
+      judge(!!b.bug,()=>setTimeout(()=>el.firstElementChild.classList.remove('pick'),600),strip(q.blocks.find(x=>x.bug).h));
+    });
+  }
+
+  if(q.type==='match'){
+    const right = q.pairs.map((p,i)=>({t:p[1],i})).sort(()=>Math.random()-.5);
+    body.innerHTML=`<div class="match"><div class="col" id="L">${q.pairs.map((p,i)=>`<button class="mi" data-i="${i}">${p[0]}</button>`).join('')}</div><div class="col" id="R">${right.map(o=>`<button class="mi" data-i="${o.i}">${o.t}</button>`).join('')}</div></div>`;
+    let pick=null, wrong=0, matched=0;
+    const L=[...body.querySelectorAll('#L .mi')], R=[...body.querySelectorAll('#R .mi')];
+    L.forEach(b=>b.onclick=()=>{if(b.classList.contains('done'))return;L.forEach(x=>x.classList.remove('sel'));b.classList.add('sel');pick=b});
+    R.forEach(b=>b.onclick=()=>{
+      if(!pick||b.classList.contains('done'))return;
+      if(pick.dataset.i===b.dataset.i){pick.classList.remove('sel');pick.classList.add('done');b.classList.add('done');matched++;pick=null;
+        if(matched===q.pairs.length){r.attempts=1;r.wrongTaps=wrong;r.answers.push(wrong+' wrong taps');
+          fb.className='fb good';fb.textContent=wrong===0?'✅ Perfect matching!':'✅ All matched!';
+          r.ms=Math.round(now()-t0);r.correct=wrong<=1;r.points=wrong===0?2:(wrong<=2?1:0);st.res[q.id]=r;save();updateTop();
+          nav.innerHTML=`<button class="btn" id="nx">Next ➜</button>`;document.getElementById('nx').onclick=()=>{st.idx++;save();show()};}
+      } else {wrong++;b.classList.add('wrong');pick.classList.add('wrong');const p=pick;setTimeout(()=>{b.classList.remove('wrong');p.classList.remove('wrong')},500)}
+    });
+  }
+
+  if(q.type==='order'){
+    const shuffled = q.items.map((h,i)=>({h,i})).sort(()=>Math.random()-.5);
+    let built=[];
+    const draw=()=>{
+      body.innerHTML=`<div class="pool" id="pool">${shuffled.filter(o=>!built.includes(o)).map(o=>`<span class="tap-wrap" data-i="${o.i}">${o.h.replace('class="blk ','class="blk tap ')}</span>`).join('')||'<span class="small">All blocks used</span>'}</div>
+        <div class="built" id="built">${built.length?built.map((o,k)=>`<div><span class="num">${k+1}</span>${o.h}</div>`).join(''):'<span class="small">Your program will appear here</span>'}</div>
+        <div class="row"><button class="btn ghost" id="undo" ${built.length?'':'disabled'}>↩ Undo</button><button class="btn" id="ck" ${built.length===q.items.length?'':'disabled'}>Check</button></div>`;
+      body.querySelectorAll('#pool .tap-wrap').forEach(el=>el.onclick=()=>{built.push(shuffled.find(o=>o.i===+el.dataset.i));draw()});
+      document.getElementById('undo').onclick=()=>{built.pop();draw()};
+      document.getElementById('ck').onclick=()=>{
+        const ok=built.every((o,k)=>o.i===k); r.answers.push(built.map(o=>strip(o.h)).join(' → '));
+        judge(ok,()=>{built=[];draw()},q.items.map(strip).join(' → '));
+        if(ok||r.attempts>=2){body.querySelectorAll('button').forEach(b=>b.disabled=true);body.querySelectorAll('.tap-wrap').forEach(el=>el.onclick=null)}
+      };
+    };
+    draw();
+  }
+
+  if(q.type==='type'){
+    const target=q.target.replace('{NAME}',st.name);
+    body.innerHTML=`<div class="target">${esc(target)}</div><input class="txt typebox mono" id="in" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here…"><div class="row"><button class="btn" id="ck">Done ✔</button></div>`;
+    const inp=document.getElementById('in');inp.focus();
+    let first=null, back=0, keys=0;
+    inp.addEventListener('keydown',e=>{ if(first===null&&e.key.length===1)first=now(); if(e.key==='Backspace')back++; if(e.key.length===1)keys++; if(e.key==='Enter'){e.preventDefault();done();} });
+    inp.addEventListener('paste',e=>{e.preventDefault()});
+    const done=()=>{
+      const v=inp.value; if(!v.trim())return;
+      const end=now(); const secs=Math.max(1,(end-(first||end))/1000);
+      const dist=lev(v,target); const acc=Math.max(0,1-dist/target.length);
+      r.attempts=1; r.ms=Math.round(end-t0); r.answers.push(v);
+      r.typing={target,typed:v,secs:+secs.toFixed(1),cpm:Math.round(v.length/secs*60),backspaces:back,keys,accuracy:Math.round(acc*100),exact:v===target,
+        caseErr: v.toLowerCase()===target.toLowerCase() && v!==target,
+        symbolsMissing:[...'()"":'].filter(c=>target.includes(c)).filter((c,i,a)=>a.indexOf(c)===i).filter(c=>(v.split(c).length)<(target.split(c).length)).join(' ')};
+      r.correct=r.typing.exact; r.points=r.typing.exact?2:(acc>=0.85?1:0);
+      st.res[q.id]=r; save(); updateTop();
+      fb.className='fb good'; fb.textContent=r.typing.exact?'✅ Perfect typing!':'👍 Nice typing!';
+      inp.disabled=true; document.getElementById('ck').disabled=true;
+      nav.innerHTML=`<button class="btn" id="nx">Next ➜</button>`;document.getElementById('nx').onclick=()=>{st.idx++;save();show()};
+    };
+    document.getElementById('ck').onclick=done;
+  }
+}
+
+function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=1;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
+
+/* ---------- Finish + teacher report ---------- */
+function finish(){
+  if(!st.endedAt){st.endedAt=now();save()}
+  document.getElementById('prog').style.width='100%';
+  stage.innerHTML=`<div class="center pop" style="padding:30px 0">
+    <div id="smile" style="font-size:150px;line-height:1;cursor:default;user-select:none;-webkit-user-select:none">😊</div>
+    <div class="q" style="margin-top:18px">Submitted! Great job, ${esc(st.name)}! 🎉</div>
+    <div id="gate" class="hidden" style="margin-top:26px">
+      <div class="row" style="justify-content:center"><input class="txt" id="pin" type="password" placeholder="PIN" style="max-width:160px" inputmode="numeric" autocomplete="off"><button class="btn ghost" id="tv">Open</button></div>
+      <div class="fb bad" id="pf"></div>
+    </div></div>`;
+  // Hidden door: tap the smiley 3 times quickly to show the PIN box.
+  let taps=0,tt=null;
+  document.getElementById('smile').onclick=()=>{taps++;clearTimeout(tt);tt=setTimeout(()=>taps=0,1500);
+    if(taps>=3){taps=0;document.getElementById('gate').classList.remove('hidden');document.getElementById('pin').focus()}};
+  const go=()=>{if(document.getElementById('pin').value.trim()==='2468')teacher();else{document.getElementById('pf').textContent='Wrong PIN';document.getElementById('pin').value=''}};
+  document.getElementById('tv').onclick=go;
+  document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+}
+
+function teacher(){
+  document.getElementById('topbar').classList.add('hidden');
+  const R=st.res, get=id=>R[id]||{points:0,ms:0,attempts:0,answers:[]};
+  const skills={};
+  QUESTIONS.filter(scored).forEach(q=>{const s=skills[q.skill]||(skills[q.skill]={pts:0,max:0,first:0,n:0,ms:0});const r=get(q.id);s.pts+=r.points||0;s.max+=2;s.n++;s.ms+=r.ms||0;if(r.points===2)s.first++});
+  const pct=k=>skills[k]?Math.round(skills[k].pts/skills[k].max*100):0;
+  const reasoning=pct('Reasoning'), blocks=pct('Block concepts'), debug=pct('Debugging'), text=pct('Text code');
+  const pyRight=['d1','d2','d3','d4'].filter(id=>get(id).correct).length;
+  const ty=['e1','e2','e3'].map(id=>get(id).typing).filter(Boolean);
+  const plainCpm=ty[0]?ty[0].cpm:0;
+  const codeAcc=ty.slice(1).length?Math.round(ty.slice(1).reduce((a,t)=>a+t.accuracy,0)/ty.slice(1).length):0;
+  const totalMin=((st.endedAt-st.startedAt)/60000).toFixed(1);
+  const blockDebug=Math.round((skills['Block concepts'].pts+skills['Debugging'].pts)/(skills['Block concepts'].max+skills['Debugging'].max)*100);
+  const ageN=parseFloat(st.age);
+
+  let v,cls,why;
+  if(blockDebug>=80 && pyRight>=3 && codeAcc>=85 && reasoning>=70){
+    v='Upgrade case → T1 (MicroPython)';cls='up';
+    why=`Strong on blocks and debugging (${blockDebug}%), ${pyRight}/4 text-code answers right, code typing ${codeAcc}% accurate.`+(ageN&&ageN<9?` <b>Age ${st.age} is below the T1 band (9–10): wrong-alignment case — raise a ticket.</b>`:'');
+  } else if(blockDebug<50 || reasoning<40){
+    v='Needs support in T0';cls='sup';
+    why=`Blocks + debugging ${blockDebug}%, reasoning ${reasoning}%. T0 has no downgrade yet, so flag for learning support and watch closely.`;
+  } else if(blockDebug>=80 && pyRight>=2){
+    v='Borderline: same tier with stretch, or another session';cls='more';
+    const gaps=[pyRight<3?`text code ${pyRight}/4`:'',codeAcc<85?`code typing ${codeAcc}%`:'',reasoning<70?`harder puzzles ${reasoning}%`:''].filter(Boolean).join(', ');
+    why=`Block skills are strong (${blockDebug}%) and ${pyRight}/4 text answers are right (portal hint: 2+ suggests T1), but not solid yet on: ${gaps}. Check it live before deciding.`;
+  } else {
+    v='Same tier (T0), give stretch tasks';cls='same';
+    why=`Fits T0: blocks + debugging ${blockDebug}%, text code ${pyRight}/4, code typing ${codeAcc}%.`;
+  }
+
+  const rows=QUESTIONS.map(q=>{const r=get(q.id);const ans=(r.answers||[]).join(' | ');
+    const pts=q.type==='survey'?'<span class="small">—</span>':`<span class="pill p${r.points||0}">${r.points||0}/2</span>`;
+    return `<tr><td>${q.id.toUpperCase()}</td><td>${q.skill}</td><td>${esc(strip(q.q)).slice(0,60)}</td><td>${pts}</td><td>${r.attempts||0}</td><td>${r.ms?(r.ms/1000).toFixed(0)+'s':'—'}</td><td>${esc(ans).slice(0,70)}</td></tr>`}).join('');
+
+  const tyRows=ty.map(t=>`<tr><td class="mono">${esc(t.target)}</td><td class="mono">${esc(t.typed)}</td><td>${t.accuracy}%</td><td>${t.cpm}</td><td>${t.secs}s</td><td>${t.backspaces}</td><td>${t.exact?'Exact':(t.caseErr?'Capital letters':'')+(t.symbolsMissing?' Missing: '+esc(t.symbolsMissing):'')}</td></tr>`).join('');
+
+  const feel=['f1','f2','f3'].map(id=>(get(id).answers||[])[0]||'—');
+  const slow=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).ms>45000).map(q=>q.id.toUpperCase());
+  const avgThink=Math.round(QUESTIONS.filter(q=>scored(q)&&q.type!=='type').reduce((a,q)=>a+(get(q.id).ms||0),0)/QUESTIONS.filter(q=>scored(q)&&q.type!=='type').length/1000);
+
+  const report=[
+   `Robot Brain Challenge — ${st.name}${st.age?' (age '+st.age+')':''}`,
+   `Date: ${new Date(st.startedAt).toLocaleString()} · Time taken: ${totalMin} min`,
+   `Suggested: ${v}`,
+   `Reasoning ${reasoning}% · Block concepts ${blocks}% · Debugging ${debug}% · Text code ${pyRight}/4 · Typing: ${plainCpm} chars/min plain, ${codeAcc}% accuracy on code`,
+   `Avg time per question: ${avgThink}s${slow.length?' · Slow (>45s): '+slow.join(', '):''}`,
+   `Feelings: ${feel[0]} · Hardest: ${feel[1]} · Wants to type code: ${feel[2]}`,
+   ``,
+   ...QUESTIONS.map(q=>{const r=get(q.id);return `${q.id.toUpperCase()} [${q.skill}] ${q.type==='survey'?'':(r.points||0)+'/2, '}tries ${r.attempts||0}, ${r.ms?(r.ms/1000).toFixed(0)+'s':'-'}: ${(r.answers||[]).join(' | ')}`}),
+   ...ty.map(t=>`Typing "${t.target}" → "${t.typed}" (${t.accuracy}%, ${t.cpm} cpm, ${t.backspaces} backspaces)`)
+  ].join('\n');
+
+  stage.innerHTML=`
+   <div class="t-h">Teacher report — ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
+   <div class="t-sub">Finished in ${totalMin} min · Points: 2 = right first try, 1 = right on second try, 0 = not right</div>
+   <div class="verdict ${cls}"><h3>Suggested: ${v}</h3>${why}<div class="small" style="margin-top:6px">A hint, not a decision. Add what you saw live (independence, explaining, focus).</div></div>
+   <div class="grid">
+    <div class="kpi"><b>${reasoning}%</b><span>Reasoning (harder puzzles)</span></div>
+    <div class="kpi"><b>${blocks}%</b><span>Block concepts</span></div>
+    <div class="kpi"><b>${debug}%</b><span>Debugging + variables</span></div>
+    <div class="kpi"><b>${pyRight}/4</b><span>Text code (T1 readiness)</span></div>
+    <div class="kpi"><b>${plainCpm}</b><span>Chars/min (plain typing)</span></div>
+    <div class="kpi"><b>${codeAcc}%</b><span>Code typing accuracy</span></div>
+    <div class="kpi"><b>${avgThink}s</b><span>Avg time per question</span></div>
+    <div class="kpi"><b>${feel[2]}</b><span>Wants to type code?</span></div>
+   </div>
+   <div class="sec">Every question</div>
+   <div style="overflow:auto"><table><tr><th>#</th><th>Skill</th><th>Question</th><th>Pts</th><th>Tries</th><th>Time</th><th>Her answers</th></tr>${rows}</table></div>
+   <div class="sec">Typing</div>
+   <div style="overflow:auto"><table><tr><th>Target</th><th>Typed</th><th>Accuracy</th><th>Chars/min</th><th>Time</th><th>Backspaces</th><th>Notes</th></tr>${tyRows}</table></div>
+   <div class="sec">About her</div>
+   <p class="small" style="font-size:16px">Felt: ${feel[0]} · Hardest part: ${esc(feel[1])} · Wants to type code: ${esc(feel[2])}${slow.length?' · Took longest on: '+slow.join(', '):''}</p>
+   <div class="sec">Copy for the portal / notes</div>
+   <textarea class="report" id="rep" readonly>${esc(report)}</textarea>
+   <div class="row"><button class="btn" id="cp">Copy report</button><button class="btn ghost" id="again">New student</button><span class="small" id="cpm"></span></div>`;
+  document.getElementById('cp').onclick=async()=>{const ta=document.getElementById('rep');try{await navigator.clipboard.writeText(ta.value);document.getElementById('cpm').textContent='Copied ✓'}catch(e){ta.focus();ta.select();document.getElementById('cpm').textContent='Selected — press Ctrl+C'}};
+  document.getElementById('again').onclick=()=>{try{localStorage.removeItem('rbc_state')}catch(e){}document.getElementById('topbar').classList.remove('hidden');st={name:'',age:'',startedAt:null,endedAt:null,idx:-1,res:{}};updateTop();startScreen(null)};
+}
+
+/* ---------- Boot ---------- */
+(function(){
+  if(location.hash==='#teacher-demo'){ // quick preview of the report with sample answers
+    st={name:'Demo',age:'8',startedAt:now()-14*60000,endedAt:now(),idx:QUESTIONS.length,res:{}};
+    QUESTIONS.forEach(q=>{st.res[q.id]={id:q.id,attempts:1,points:scored(q)?2:0,correct:true,ms:12000,answers:['sample'],typing:q.type==='type'?{target:q.target.replace('{NAME}','Demo'),typed:q.target.replace('{NAME}','Demo'),secs:10,cpm:60,backspaces:1,keys:20,accuracy:100,exact:true}:undefined}});
+    teacher();return;
+  }
+  startScreen(load());
+})();
+</script>
+</body>
+</html>
