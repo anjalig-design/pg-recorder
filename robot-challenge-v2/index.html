@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Brain Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF8EC; --ink:#22223B; --muted:#6B6B80; --card:#FFFFFF;
+  --violet:#6C4CF1; --violet-soft:#ECE7FF; --green:#1FA971; --green-soft:#DDF6EA;
+  --red:#E5484D; --red-soft:#FDE5E6; --yellow:#FFC83D; --line:#E9E3D6;
+  --event:#C2185B; --loop:#2E9E4F; --basic:#1E6FD9; --logic:#008B8B; --var:#E2711D;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Baloo 2",system-ui,sans-serif;font-size:20px;line-height:1.35}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:20px 18px 60px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.top .logo{font-size:30px}
+.top h1{font-size:22px;margin:0;font-weight:800}
+.bar{flex:1;height:14px;background:#F0E8D8;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),#9B7BFF);width:0;transition:width .4s}
+.stars{font-weight:800;color:#B7791F;white-space:nowrap}
+.card{background:var(--card);border-radius:24px;padding:26px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(34,34,59,.06)}
+.tag{display:inline-block;font-size:15px;font-weight:700;padding:3px 12px;border-radius:99px;background:var(--violet-soft);color:var(--violet);margin-bottom:8px}
+.q{font-size:26px;font-weight:800;margin:4px 0 18px}
+.hint{color:var(--muted);font-size:17px;margin:-10px 0 16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.opt{background:#fff;border:3px solid var(--line);border-radius:18px;padding:16px;font-size:24px;font-weight:700;min-height:70px;transition:transform .1s}
+.opt:hover{border-color:var(--violet)}
+.opt:active{transform:scale(.97)}
+.opt.sel{border-color:var(--violet);background:var(--violet-soft)}
+.opts.codeopts{grid-template-columns:1fr}
+.opt.mono{font-family:"JetBrains Mono",ui-monospace,monospace;text-align:left;white-space:pre;overflow-x:auto;font-size:26px;padding:16px 22px}
+.opt.good{border-color:var(--green);background:var(--green-soft)}
+.opt.bad{border-color:var(--red);background:var(--red-soft)}
+.big{font-size:40px;letter-spacing:6px;text-align:center;margin:6px 0 18px}
+.btn{background:var(--violet);color:#fff;border:0;border-radius:16px;padding:14px 28px;font-weight:800;font-size:22px;box-shadow:0 4px 0 #4B32C3}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #4B32C3}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:#fff;color:var(--violet);border:2px solid var(--violet);box-shadow:none}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.fb{font-weight:800;font-size:22px;min-height:32px;margin-top:14px}
+.fb.good{color:var(--green)} .fb.bad{color:var(--red)}
+input.txt{font-family:inherit;font-size:26px;padding:12px 16px;border:3px solid var(--line);border-radius:16px;width:100%;max-width:340px;outline:none}
+input.txt:focus{border-color:var(--violet)}
+input.mono,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.typebox{width:100%;max-width:none;font-size:24px}
+.target{font-family:"JetBrains Mono",monospace;font-size:28px;background:#22223B;color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:14px;display:inline-block}
+/* blocks */
+.prog{display:inline-flex;flex-direction:column;gap:4px;margin:4px 0 16px;font-size:20px}
+.blk{color:#fff;font-weight:700;padding:8px 14px;border-radius:10px;display:inline-block;width:max-content;border:3px solid transparent}
+.blk.event{background:var(--event);border-radius:16px 16px 10px 10px}
+.blk.loop{background:var(--loop)} .blk.basic{background:var(--basic)} .blk.logic{background:var(--logic)} .blk.var{background:var(--var)}
+.blk .slot{background:#fff;color:var(--ink);border-radius:99px;padding:0 10px;margin:0 4px}
+.ind{margin-left:26px}
+.blk.tap{cursor:pointer}
+.blk.tap:hover{border-color:var(--yellow)}
+.blk.pick{border-color:var(--yellow);box-shadow:0 0 0 3px #fff inset}
+.code{font-family:"JetBrains Mono",monospace;background:#22223B;color:#F8F8F2;border-radius:16px;padding:16px 20px;font-size:22px;white-space:pre;overflow:auto;margin-bottom:16px}
+.code .k{color:#FF79C6}.code .s{color:#F1FA8C}.code .n{color:#BD93F9}.code .f{color:#8BE9FD}
+/* match */
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col{display:flex;flex-direction:column;gap:10px}
+.mi{border:3px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-size:19px;font-weight:700;text-align:left;min-height:62px}
+.mi.sel{border-color:var(--violet);background:var(--violet-soft)}
+.mi.done{border-color:var(--green);background:var(--green-soft);cursor:default}
+.mi.wrong{border-color:var(--red);background:var(--red-soft)}
+.mi .blk{font-size:17px;padding:4px 10px}
+/* order */
+.pool,.built{display:flex;flex-direction:column;gap:8px;min-height:60px;padding:12px;border-radius:16px}
+.pool{background:#F7F2E7}
+.built{border:3px dashed var(--line);margin-top:12px}
+.built .num{color:var(--muted);font-weight:800;margin-right:8px}
+.center{text-align:center}
+.emoji-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.emoji-row .opt{font-size:46px;min-width:96px}
+.hidden{display:none!important}
+/* teacher */
+.t-h{font-size:24px;font-weight:800;margin:0 0 6px}
+.t-sub{color:var(--muted);font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:#F7F2E7;border-radius:14px;padding:12px}
+.kpi b{display:block;font-size:28px}
+.kpi span{font-size:15px;color:var(--muted)}
+.verdict{border-radius:16px;padding:16px;margin-bottom:18px;font-size:18px}
+.verdict.up{background:var(--violet-soft)} .verdict.adv{background:#E3F4FF}
+.plan{background:#F7F2E7;border-radius:14px;padding:14px;font-size:16px;font-family:system-ui,sans-serif}
+.plan ul{margin:4px 0 6px;padding-left:20px}
+.verdict div{font-family:system-ui,sans-serif;font-size:16px} .verdict.same{background:var(--green-soft)} .verdict.sup{background:#FFF1CC} .verdict.more{background:#EEE}
+.verdict h3{margin:0 0 6px;font-size:22px}
+table{width:100%;border-collapse:collapse;font-size:15px;font-family:system-ui,sans-serif}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.pill{font-weight:700;border-radius:99px;padding:1px 8px;font-size:13px}
+.p2{background:var(--green-soft);color:#11724B}.p1{background:#FFF1CC;color:#8A5A00}.p0{background:var(--red-soft);color:#A1262A}
+.sec{font-family:"Baloo 2";font-size:20px;font-weight:800;margin:20px 0 8px}
+.small{font-size:14px;color:var(--muted);font-family:system-ui,sans-serif}
+textarea.report{width:100%;height:160px;font-family:ui-monospace,monospace;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .35s ease-out}
+@media (max-width:520px){.q{font-size:22px}.match{grid-template-columns:1fr}.code{font-size:18px}}
+.btn.ghost.dk{font-size:18px;padding:10px 18px;color:var(--muted);border-color:#CFC8B8}
+.target{white-space:pre;max-width:100%;overflow-x:auto}
+@media (max-width:520px){.target{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top" id="topbar">
+    <div class="logo">🤖</div>
+    <h1>Robot Brain Challenge</h1>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="stars" id="stars">⭐ 0</div>
+  </div>
+  <div class="card" id="stage"></div>
+</div>
+
+<script>
+/* =====================================================================
+   Robot Brain Challenge — T0 placement check
+   Student answers in the browser; on Submit the report goes to the
+   teacher's private ntfy.sh feed named in the link (#r-CODE).
+   ===================================================================== */
+const B = (cls, html) => `<span class="blk ${cls}">${html}</span>`;
+const S = t => `<span class="slot">${t}</span>`;
+
+/* ---------- Question bank ----------
+   type: mcq | fill | match | order | tapbug | type | survey
+   tests: what the question checks (shown in the report)            */
+const QUESTIONS = [
+ // A. Thinking puzzles
+ {id:'a1',sec:'Thinking',skill:'Reasoning',type:'fill',tests:'Spotting a square-number pattern (advanced for age 8)',q:'Look at the numbers. Which number comes next? Type the number.',big:'1, 4, 9, 16, ?',ans:['25'],numeric:true},
+ {id:'a2',sec:'Thinking',skill:'Reasoning',type:'fill',tests:'Spotting a doubling pattern',q:'Look at the numbers. Which number comes next? Type the number.',big:'3, 6, 12, 24, ?',ans:['48'],numeric:true},
+ {id:'a3',sec:'Thinking',skill:'Reasoning',type:'fill',tests:'Multiplying in a story problem',q:'3 robots have 12 wheels in total. Every robot has the same number of wheels. How many wheels do 5 robots have? Type the number.',ans:['20'],numeric:true},
+ {id:'a4',sec:'Thinking',skill:'Reasoning',type:'fill',tests:'Logical ordering (comparisons)',q:'Ana is taller than Ben. Ben is taller than Cat. Cat is taller than Dev. How many children are taller than Cat? Type the number.',ans:['2'],numeric:true},
+ {id:'a5',sec:'Thinking',skill:'Reasoning',type:'fill',tests:'If / otherwise rule with numbers',q:'Rule: IF a number is bigger than 10, take away 3. OTHERWISE, add 5. Start with 7 and use the rule. What number do you get? Type the number.',ans:['12'],numeric:true},
+
+ // B. Block coding — mostly trace / calculate / build, hard to guess
+ {id:'b1',sec:'Blocks',skill:'Block concepts',type:'match',tests:'Knows what the main blocks do (loops, events, if/else, shake)',q:'Match each block to what it does.',hint:'Tap a block on the left, then tap what it does on the right.',
+  pairs:[
+   [B('loop','forever'),'Keeps doing it again and again, never stops'],
+   [B('loop','repeat '+S('3')+' times'),'Does it 3 times, then stops'],
+   [B('event','on shake'),'Starts when you shake the micro:bit'],
+   [B('logic','if … then … else'),'Checks something and picks one of two paths'],
+   [B('var','change score by '+S('1')),'Adds 1 to a number we are keeping'],
+   [B('basic','pause '+S('1000')+' ms'),'Waits a little bit'],
+  ]},
+ {id:'b2',sec:'Blocks',skill:'Block concepts',type:'fill',tests:'Tracing a loop inside a loop (nested loops)',q:'Read the blocks. How many hearts will the micro:bit show in total? Type the number.',
+  prog:`<div class="prog">${B('event','on start')}<div class="ind prog">${B('loop','repeat '+S('3')+' times')}<div class="ind prog">${B('loop','repeat '+S('2')+' times')}<div class="ind prog">${B('basic','show icon ❤️')}${B('basic','clear screen')}</div></div></div></div>`,ans:['6'],numeric:true},
+ {id:'b3',sec:'Blocks',skill:'Block concepts',type:'fill',tests:'Tracing a variable that changes inside a loop',q:'Read the blocks. Which number will the micro:bit show at the end? Type the number.',
+  prog:`<div class="prog">${B('event','on start')}<div class="ind prog">${B('var','set score to '+S('10'))}${B('loop','repeat '+S('3')+' times')}<div class="ind prog">${B('var','change score by '+S('-2'))}</div>${B('basic','show number score')}</div></div>`,ans:['4'],numeric:true},
+ {id:'b4',sec:'Blocks',skill:'Block concepts',type:'order',tests:'Choosing the right event (shake) and building with it',q:'Make the micro:bit show a smiley ONLY when you shake it. Pick the 2 blocks you need, in the right order, then press Check.',hint:'Some blocks are not needed.',
+  items:[B('event','on shake'),B('basic','show icon 😊'),B('event','on start'),B('loop','forever'),B('event','on button A pressed')],accept:[[0,1]]},
+ {id:'b5',sec:'Blocks',skill:'Block concepts',type:'fill',tests:'Using maths to set a loop count',q:'The robot moves 2 steps every time the loop runs. It needs to move 10 steps in total. Which number should go in the empty box? Type the number.',
+  prog:`<div class="prog">${B('loop','repeat '+S('?')+' times')}<div class="ind prog">${B('basic','move '+S('2')+' steps 🤖')}</div></div>`,ans:['5'],numeric:true},
+ {id:'b6',sec:'Blocks',skill:'Block concepts',type:'order',tests:'Building a two-button counter (events + variable) in the right order',q:'Build a counter! Tap the blocks in the right order. Button A: add 1 and show the number. Button B: go back to 0 and show the number.',hint:'Put each button block first, then the blocks it runs under it.',
+  items:[B('event','on button A pressed'),B('var','change count by '+S('1')),B('basic','show number count'),B('event','on button B pressed'),B('var','set count to '+S('0')),B('basic','show number count')],
+  accept:[[0,1,2,3,4,5],[3,4,5,0,1,2]]},
+
+ // C. Debugging and variables — read the code, find or fix the mistake
+ {id:'c1',sec:'Bug hunt',skill:'Debugging',type:'tapbug',oneTry:true,tests:'Finding the wrong event (start vs forever)',q:'🐞 The heart should blink forever, but it blinks once and stops. Tap the wrong block, then press Check. You get one try.',
+  blocks:[{h:B('event','on start'),bug:true},{h:B('basic','show icon ❤️'),ind:true},{h:B('basic','pause '+S('500')+' ms'),ind:true},{h:B('basic','clear screen'),ind:true},{h:B('basic','pause '+S('500')+' ms'),ind:true}]},
+ {id:'c2',sec:'Bug hunt',skill:'Debugging',type:'tapbug',oneTry:true,tests:'Finding a variable reset in the wrong place',q:'🐞 Each press of A should count up: 1, 2, 3… But it always shows 1. Tap the wrong block, then press Check. You get one try.',
+  blocks:[{h:B('event','on start')},{h:B('var','set count to '+S('0')),ind:true},{h:B('event','on button A pressed')},{h:B('var','set count to '+S('0')),ind:true,bug:true},{h:B('var','change count by '+S('1')),ind:true},{h:B('basic','show number count'),ind:true}]},
+ {id:'c3',sec:'Bug hunt',skill:'Debugging',type:'fill',tests:'Tracing a variable across two events',q:'The count starts at 0. You press A, then A again, then B. Which number does the micro:bit show now? Type the number.',
+  prog:`<div class="prog">${B('event','on button A pressed')}<div class="ind prog">${B('var','change count by '+S('2'))}${B('basic','show number count')}</div>${B('event','on button B pressed')}<div class="ind prog">${B('var','change count by '+S('-1'))}${B('basic','show number count')}</div></div>`,ans:['3'],numeric:true},
+ {id:'c4',sec:'Bug hunt',skill:'Debugging',type:'fill',tests:'Fixing nested loops to get an exact result',q:'🐞 This shows 8 hearts, but we want 12. What should the 2 be changed to? Type the number.',
+  prog:`<div class="prog">${B('loop','repeat '+S('4')+' times')}<div class="ind prog">${B('loop','repeat '+S('2')+' times')}<div class="ind prog">${B('basic','show icon ❤️')}</div></div></div>`,ans:['3'],numeric:true},
+
+ // D. Text code (T1 readiness)
+ {id:'d1',sec:'Robot code',skill:'Text code',type:'fill',tests:'Variables and output in Python (x holds 5, print shows the result)',q:'When this robot code runs, what will appear on the screen? Type your answer.',hint:'This is robot code typed on a keyboard. You may not have learned it yet, and that is OK! Try to work it out, or tap I don\'t know.',
+  code:'<span class="n">x</span> = <span class="n">5</span>\n<span class="f">print</span>(x + <span class="n">3</span>)',ans:['8'],numeric:true},
+ {id:'d2',sec:'Robot code',skill:'Text code',type:'fill',tests:'Reading a Python for-loop',q:'When this robot code runs, how many times will the word Hi appear? Type the number.',hint:'This is robot code typed on a keyboard. You may not have learned it yet, and that is OK! Try to work it out, or tap I don\'t know.',
+  code:'<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">3</span>):\n    <span class="f">print</span>(<span class="s">"Hi"</span>)',ans:['3'],numeric:true},
+ {id:'d3',sec:'Robot code',skill:'Text code',type:'fill',tests:'Reading Python if / else with a variable',q:'When this robot code runs, which number will appear on the screen? Type the number.',hint:'This is robot code typed on a keyboard. You may not have learned it yet, and that is OK! Try to work it out, or tap I don\'t know.',
+  code:'<span class="n">x</span> = <span class="n">5</span>\n<span class="k">if</span> x > <span class="n">3</span>:\n    <span class="f">print</span>(x * <span class="n">2</span>)\n<span class="k">else</span>:\n    <span class="f">print</span>(x + <span class="n">1</span>)',ans:['10'],numeric:true},
+ {id:'d4',sec:'Robot code',skill:'Text code',type:'fill',tests:'Fixing Python print syntax (capital letter, brackets, quotes)',q:'This robot code has mistakes, so it will not work. Type it correctly so it shows the word Hello.',hint:'This is robot code typed on a keyboard. You may not have learned it yet, and that is OK! Try to work it out, or tap I don\'t know.',
+  code:'Print(Hello',ans:['print("hello")',"print('hello')"],mono:true},
+
+ // E. Typing
+ {id:'e1',sec:'Typing',skill:'Typing',type:'type',tests:'General keyboard typing (speed and accuracy)',q:'Typing time! Copy the words from the black box into the white box, exactly the same. Then press Enter.',target:'I love robots'},
+ {id:'e2',sec:'Typing',skill:'Typing',type:'type',tests:'Typing a line of Python with brackets and quotes',q:'Now copy this line of robot code exactly, letter by letter. Use the same brackets ( ) and quote marks " ". Then press Enter.',target:'print("Hello {NAME}")'},
+ {id:'e3',sec:'Typing',skill:'Typing',type:'type',tests:'Typing a Python loop line (colon at the end)',q:'Copy one more line of robot code exactly. Look carefully: it ends with a colon ( : ). Then press Enter.',target:'for i in range(3):'},
+
+ // F. About you
+ {id:'f1',sec:'About you',skill:'Feelings',type:'survey',tests:'How the student felt',q:'How did you feel doing this?',opts:['😃','🙂','😐','😟'],emoji:true},
+ {id:'f2',sec:'About you',skill:'Feelings',type:'survey',tests:'Which part the student found hardest',q:'Which part was the HARDEST?',opts:['🧩 Puzzles','🧱 Blocks','🐞 Bug hunt','💻 Robot code','⌨️ Typing']},
+ {id:'f3',sec:'About you',skill:'Feelings',type:'survey',tests:'Motivation to type real code (used in the decision)',q:'Would you like to type real code like programmers do?',opts:['Yes! 🚀','Maybe 🤔','Not yet 🙈']},
+];
+
+/* ---------- State ---------- */
+let st = {name:'',age:'',startedAt:null,endedAt:null,idx:-1,res:{}};
+function save(){try{localStorage.setItem('rbc_state',JSON.stringify(st))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('rbc_state')||'null');if(s&&s.idx>=0&&!s.endedAt)return s}catch(e){}return null}
+
+const stage = document.getElementById('stage');
+const now = ()=>performance.timeOrigin+performance.now();
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip = h=>String(h).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+const scored = q=>q.type!=='survey';
+const secs = ms=>Math.round((ms||0)/1000);
+
+function updateTop(){
+  const done = Object.keys(st.res).length;
+  document.getElementById('prog').style.width = (done/QUESTIONS.length*100)+'%';
+  const stars = Object.values(st.res).reduce((a,r)=>a+(r.points||0),0);
+  document.getElementById('stars').textContent = '⭐ '+stars;
+}
+
+/* ---------- Leaving the page (tab switch or another app) ----------
+   Recorded against the question on screen: when she left and for how long.
+   Gaps under 2 seconds are ignored.                                        */
+let cur=null, awayAt=null, awayKind=null;
+// kind 'window' = she clicked another window but the page stayed on screen (e.g. Zoom to unmute);
+// kind 'hidden' = the page was hidden: another browser tab, or the browser minimised.
+function goneAway(kind){
+  if(!cur) return;
+  if(awayAt===null){awayAt=now();awayKind=kind}
+  else if(kind==='hidden') awayKind='hidden';
+}
+function cameBack(){
+  if(awayAt===null||document.hidden) return;
+  const dur=(now()-awayAt)/1000, c=cur, kind=awayKind; awayAt=null; awayKind=null;
+  if(!c||dur<2) return;
+  const at=Math.round((now()-c.t0)/1000-dur);
+  (c.r.away=c.r.away||[]).push({at,dur:Math.round(dur),kind,clock:new Date(Date.now()-dur*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
+  if(st.res[c.q.id]===c.r) save();
+}
+// Left the page entirely: went to another site in this tab, reloaded, or closed it.
+window.addEventListener('pagehide',()=>{ if(cur&&!st.endedAt){ st.leftPage={id:cur.q.id,t:Date.now(),at:Math.round((now()-cur.t0)/1000),before:(cur.r.away||[])}; save(); } });
+document.addEventListener('visibilitychange',()=>{document.hidden?goneAway('hidden'):cameBack()});
+window.addEventListener('blur',()=>goneAway(document.hidden?'hidden':'window'));
+window.addEventListener('focus',cameBack);
+
+/* ---------- Start ---------- */
+function startScreen(resume){
+  stage.innerHTML = `
+   <div class="center pop">
+    <div style="font-size:64px">🤖✨</div>
+    <div class="q">Hi! Ready for the Robot Brain Challenge?</div>
+    <p class="hint" style="margin:0 0 18px">Puzzles, blocks, bug hunts and real robot code. Take your time and do your best!</p>
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+      <input class="txt" id="nm" placeholder="Your first name" autocomplete="off" maxlength="20">
+      <input class="txt" id="ag" placeholder="Your age" inputmode="numeric" maxlength="3" style="max-width:160px">
+      <button class="btn" id="go">Let's go! 🚀</button>
+      ${resume?'<button class="btn ghost" id="res">Continue where I stopped</button>':''}
+    </div>
+   </div>`;
+  const nm=document.getElementById('nm');nm.focus();
+  document.getElementById('go').onclick=()=>{
+    const n=nm.value.trim(); if(!n){nm.style.borderColor='var(--red)';nm.focus();return}
+    st={name:n,age:document.getElementById('ag').value.trim(),startedAt:now(),endedAt:null,idx:0,res:{}};
+    save(); show();
+  };
+  nm.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ag').focus()});
+  if(resume)document.getElementById('res').onclick=()=>{st=resume;
+    if(st.leftPage){const L=st.leftPage;(st.navAway=st.navAway||[]).push(...(L.before||[]).map(a=>({...a,id:L.id})));(st.navAway).push({id:L.id,kind:'left',at:L.at,dur:Math.round((Date.now()-L.t)/1000),clock:new Date(L.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});delete st.leftPage;save()}
+    show()};
+}
+
+/* ---------- Keystroke tracker: corrections and pauses ----------
+   fixes: each run of Backspace/Delete → text before and after deleting.
+   pauses: any gap over 3s between keys → what she had typed so far.   */
+function tracker(inp){
+  const tr={fixes:[],pauses:[],last:null,delFrom:null};
+  inp.addEventListener('keydown',e=>{
+    const t=now(), key=e.key.length===1||e.key==='Backspace'||e.key==='Delete';
+    if(!key)return;
+    if(tr.last&&t-tr.last>3000)tr.pauses.push({after:inp.value,s:Math.round((t-tr.last)/100)/10});
+    tr.last=t;
+    if(e.key==='Backspace'||e.key==='Delete'){if(tr.delFrom===null)tr.delFrom=inp.value}
+    else if(tr.delFrom!==null){tr.fixes.push({from:tr.delFrom,to:inp.value});tr.delFrom=null}
+  });
+  tr.take=()=>{if(tr.delFrom!==null){tr.fixes.push({from:tr.delFrom,to:inp.value});tr.delFrom=null}
+    const o={fixes:tr.fixes.slice(),pauses:tr.pauses.slice()};tr.fixes=[];tr.pauses=[];return o};
+  return tr;
+}
+const mindText=m=>{const p=[];
+  if(m.fixes.length)p.push('corrected: '+m.fixes.map(f=>`"${vis(f.from)}" → deleted back to "${vis(f.to)}"`).join('; '));
+  if(m.pauses.length)p.push('paused: '+m.pauses.map(x=>`${x.s}s after "${vis(x.after)}"`).join('; '));
+  return p.join('. ')};
+
+/* ---------- One question ----------
+   Every action is logged in r.log as {k, v, ok, s} (s = seconds since the
+   question appeared), so the report can show changes of mind.          */
+function show(){
+  updateTop();
+  if(st.idx>=QUESTIONS.length) return finish();
+  const q = QUESTIONS[st.idx];
+  const t0 = now();
+  const r = {id:q.id,attempts:0,points:0,correct:false,firstMs:null,answers:[],log:[]};
+  cur={q,r,t0}; awayAt=null;
+  const log=(k,v,ok)=>{const ms=Math.round(now()-t0);if(r.firstMs===null)r.firstMs=ms;r.log.push({k,v:strip(v),ok,s:Math.round(ms/100)/10})};
+  const head = `<div class="tag">${q.sec} · ${st.idx+1} of ${QUESTIONS.length}</div><div class="q">${q.q}</div>${q.hint?`<div class="hint">${q.hint}</div>`:''}${q.big?`<div class="big">${q.big}</div>`:''}${q.prog||''}${q.code?`<div class="code">${q.code}</div>`:''}`;
+  stage.innerHTML = `<div class="pop">${head}<div id="body"></div><div class="fb" id="fb"></div><div class="row" id="nav"></div></div>`;
+  const body=document.getElementById('body'), fb=document.getElementById('fb'), nav=document.getElementById('nav');
+  const last = st.idx===QUESTIONS.length-1;
+
+  const killDK=()=>{const d=document.getElementById('dkrow');if(d)d.remove()};
+  const next=()=>{killDK();nav.innerHTML=`<button class="btn" id="nx">${last?'Submit ✅':'Next ➜'}</button>`;document.getElementById('nx').onclick=()=>{st.idx++;save();show()}};
+  const finishQ=(correct,pointsOverride)=>{
+    r.ms=Math.round(now()-t0); r.correct=correct;
+    r.points = pointsOverride!==undefined?pointsOverride:(correct?(r.attempts===1?2:1):0);
+    st.res[q.id]=r; save(); updateTop(); next();
+  };
+  // one checked attempt; 2 tries max
+  const judge=(v,ok,onRetry)=>{
+    r.attempts++; r.answers.push(strip(v)); log('check',v,ok);
+    if(ok){fb.className='fb good';fb.textContent=r.attempts===1?'✅ Awesome!':'✅ Got it!';finishQ(true);return true}
+    if(r.attempts<(q.oneTry?1:2)){fb.className='fb bad';fb.textContent='🤔 Not quite. Try once more!';onRetry&&onRetry();return false}
+    fb.className='fb bad';fb.innerHTML='👍 Good try! The answer is: <b>'+esc(correctText(q,st.name))+'</b>';finishQ(false);return true;
+  };
+
+  /* Tap an option (can change), then Check */
+  if(q.type==='mcq'||q.type==='survey'){
+    body.innerHTML=`<div class="${q.emoji?'emoji-row':'opts'+(q.mono?' codeopts':'')}">${q.opts.map((o,i)=>`<button class="opt ${q.mono?'mono':''}" data-i="${i}">${o}</button>`).join('')}</div>
+      <div class="row"><button class="btn" id="ck" disabled>${q.type==='survey'?(last?'Submit ✅':'Next ➜'):'Check'}</button></div>`;
+    const btns=[...body.querySelectorAll('.opt')], ck=document.getElementById('ck');
+    let sel=null, locked=false;
+    btns.forEach(b=>b.onclick=()=>{ if(locked||b.disabled)return;
+      btns.forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); sel=q.opts[+b.dataset.i]; log('pick',sel); ck.disabled=false; fb.textContent='';});
+    ck.onclick=()=>{ if(sel===null||locked)return;
+      if(q.type==='survey'){locked=true;r.attempts=1;r.answers=[strip(sel)];log('check',sel,null);r.ms=Math.round(now()-t0);r.correct=null;r.points=0;st.res[q.id]=r;save();updateTop();st.idx++;save();show();return}
+      const b=btns.find(x=>q.opts[+x.dataset.i]===sel); const ok=sel===q.ans;
+      b.classList.remove('sel'); b.classList.add(ok?'good':'bad');
+      const done=judge(sel,ok,()=>{b.disabled=true;sel=null;ck.disabled=true});
+      if(done){locked=true;ck.disabled=true;btns.forEach(x=>x.disabled=true);btns.find(x=>q.opts[+x.dataset.i]===q.ans).classList.add('good')}
+    };
+  }
+
+  /* Type a short answer, then Check (corrections are counted) */
+  if(q.type==='fill'){
+    body.innerHTML=`<div class="row" style="margin-top:0"><input class="txt ${q.mono?'mono typebox':''}" id="in" ${q.numeric?'inputmode="numeric"':''} autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer"><button class="btn" id="ck">Check</button></div>`;
+    const inp=document.getElementById('in');inp.focus();
+    const tr=tracker(inp);
+    inp.addEventListener('input',()=>{ if(r.firstMs===null)r.firstMs=Math.round(now()-t0); });
+    const check=()=>{const v=inp.value.trim(); if(!v)return;
+      const m=mindText(tr.take()); if(m)log('edit',m);
+      const norm=q.mono?v.replace(/\s+/g,'').replace(/^print/,'print').toLowerCase():v.toLowerCase();
+      const okv=q.mono?(/^print\(/.test(v.replace(/\s+/g,''))&&q.ans.includes(norm)):q.ans.includes(norm);
+      const done=judge(v,okv,()=>{inp.value='';inp.focus()});
+      if(done){inp.disabled=true;document.getElementById('ck').disabled=true}};
+    document.getElementById('ck').onclick=check;
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();check()}});
+  }
+
+  /* Tap the wrong block (can change), then Check */
+  if(q.type==='tapbug'){
+    body.innerHTML=`<div class="prog">${q.blocks.map((b,i)=>`<div style="margin-left:${(b.ind===2?52:b.ind?26:0)}px"><span class="tap-wrap" data-i="${i}">${b.h.replace('class="blk ','class="blk tap ')}</span></div>`).join('')}</div>
+      <div class="row"><button class="btn" id="ck" disabled>Check</button></div>`;
+    const els=[...body.querySelectorAll('.tap-wrap')], ck=document.getElementById('ck');
+    let sel=null, locked=false;
+    els.forEach(el=>el.onclick=()=>{ if(locked)return;
+      els.forEach(x=>x.firstElementChild.classList.remove('pick')); el.firstElementChild.classList.add('pick');
+      sel=+el.dataset.i; log('pick',q.blocks[sel].h); ck.disabled=false; fb.textContent='';});
+    ck.onclick=()=>{ if(sel===null||locked)return;
+      const b=q.blocks[sel];
+      const done=judge(b.h,!!b.bug,()=>{els[sel].firstElementChild.classList.remove('pick');sel=null;ck.disabled=true});
+      if(done){locked=true;ck.disabled=true}};
+  }
+
+  /* Match: wrong pairings and changes of selection are logged */
+  if(q.type==='match'){
+    const right = q.pairs.map((p,i)=>({t:p[1],i})).sort(()=>Math.random()-.5);
+    body.innerHTML=`<div class="match"><div class="col" id="L">${q.pairs.map((p,i)=>`<button class="mi" data-i="${i}">${p[0]}</button>`).join('')}</div><div class="col" id="R">${right.map(o=>`<button class="mi" data-i="${o.i}">${o.t}</button>`).join('')}</div></div>`;
+    let pick=null, wrong=0, matched=0;
+    const L=[...body.querySelectorAll('#L .mi')], R=[...body.querySelectorAll('#R .mi')];
+    L.forEach(b=>b.onclick=()=>{if(b.classList.contains('done'))return;
+      if(pick&&pick!==b)log('switch',strip(q.pairs[+pick.dataset.i][0])+' → '+strip(q.pairs[+b.dataset.i][0]));
+      L.forEach(x=>x.classList.remove('sel'));b.classList.add('sel');pick=b});
+    R.forEach(b=>b.onclick=()=>{
+      if(!pick||b.classList.contains('done'))return;
+      const lt=strip(q.pairs[+pick.dataset.i][0]), rt=q.pairs[+b.dataset.i][1];
+      if(pick.dataset.i===b.dataset.i){log('pair',lt+' ↔ '+rt,true);pick.classList.remove('sel');pick.classList.add('done');b.classList.add('done');matched++;pick=null;
+        if(matched===q.pairs.length){r.attempts=1;r.wrongTaps=wrong;r.answers.push(wrong+' wrong pair'+(wrong===1?'':'s'));
+          fb.className='fb good';fb.textContent=wrong===0?'✅ Perfect matching!':'✅ All matched!';
+          finishQ(wrong<=2, wrong===0?2:(wrong<=2?1:0));}
+      } else {wrong++;log('pair',lt+' ↔ '+rt,false);b.classList.add('wrong');pick.classList.add('wrong');const p=pick;setTimeout(()=>{b.classList.remove('wrong');p.classList.remove('wrong')},500)}
+    });
+  }
+
+  /* Order: every add and undo is logged */
+  if(q.type==='order'){
+    const shuffled = q.items.map((h,i)=>({h,i})).sort(()=>Math.random()-.5);
+    let built=[], locked=false;
+    const need=q.accept?q.accept[0].length:q.items.length;
+    const draw=()=>{
+      body.innerHTML=`<div class="pool" id="pool">${shuffled.filter(o=>!built.includes(o)).map(o=>`<span class="tap-wrap" data-i="${o.i}">${o.h.replace('class="blk ','class="blk tap ')}</span>`).join('')||'<span class="small">All blocks used</span>'}</div>
+        <div class="built" id="built">${built.length?built.map((o,k)=>`<div><span class="num">${k+1}</span>${o.h}</div>`).join(''):'<span class="small">Your program will appear here</span>'}</div>
+        <div class="row"><button class="btn ghost" id="undo" ${built.length&&!locked?'':'disabled'}>↩ Undo</button><button class="btn" id="ck" ${built.length===need&&!locked?'':'disabled'}>Check</button></div>`;
+      if(locked)return;
+      addDK();
+      body.querySelectorAll('#pool .tap-wrap').forEach(el=>el.onclick=()=>{if(built.length>=need)return;const o=shuffled.find(o=>o.i===+el.dataset.i);built.push(o);log('add',o.h);draw()});
+      document.getElementById('undo').onclick=()=>{const o=built.pop();log('undo',o.h);draw()};
+      document.getElementById('ck').onclick=()=>{
+        const acc=q.accept||[q.items.map((_,k)=>k)];
+        const ok=built.length===need&&acc.some(seq=>seq.every((idx,k)=>strip(q.items[idx])===strip(built[k].h)));
+        const done=judge(built.map(o=>strip(o.h)).join(' → '),ok,()=>{built=[];draw()});
+        if(done){locked=true;draw()}
+      };
+    };
+    draw();
+  }
+
+  /* "I don't know": 0 points, no guessing; time before tapping it is kept */
+  function addDK(){
+    if(!(scored(q)&&q.type!=='type')||st.res[q.id]||document.getElementById('dkrow'))return;
+    const row=document.createElement('div');row.className='row';row.id='dkrow';
+    row.innerHTML=`<button class="btn ghost dk" id="dk">🤷 I don't know</button>`;
+    body.appendChild(row);
+    document.getElementById('dk').onclick=()=>{
+      log('dontknow',"I don't know"); r.dontKnow=true; r.attempts++; r.answers.push("I don't know");
+      body.querySelectorAll('button,input').forEach(x=>x.disabled=true); body.style.pointerEvents='none';
+      fb.className='fb good'; fb.textContent="That's OK! 👍 Let's keep going.";
+      finishQ(false,0);
+    };
+  }
+  addDK();
+
+  /* Typing: keys, backspaces, speed, accuracy */
+  if(q.type==='type'){
+    const target=q.target.replace('{NAME}',st.name);
+    body.innerHTML=`<div class="target">${esc(target)}</div><input class="txt typebox mono" id="in" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here…"><div class="row"><button class="btn" id="ck">Done ✔</button></div>`;
+    const inp=document.getElementById('in');inp.focus();
+    const tr=tracker(inp);
+    let first=null, back=0, keys=0;
+    inp.addEventListener('keydown',e=>{ if(first===null&&e.key.length===1){first=now();r.firstMs=Math.round(first-t0)} if(e.key==='Backspace'||e.key==='Delete')back++; if(e.key.length===1)keys++; if(e.key==='Enter'){e.preventDefault();done();} });
+    inp.addEventListener('paste',e=>{e.preventDefault()});
+    const done=()=>{
+      const v=inp.value; if(!v.trim())return;
+      const end=now(); const sec=Math.max(1,(end-(first||end))/1000);
+      const dist=lev(v,target); const acc=Math.max(0,1-dist/target.length);
+      r.attempts=1; r.ms=Math.round(end-t0); r.answers.push(v);
+      const cpm=Math.round(v.length/sec*60);
+      const mind=tr.take();
+      r.typing={target,typed:v,fixes:mind.fixes,pauses:mind.pauses,secs:+sec.toFixed(1),cpm,wpm:Math.round(cpm/5),backspaces:back,keys,needed:target.length,accuracy:Math.round(acc*100),exact:v===target,
+        caseErr: v.toLowerCase()===target.toLowerCase() && v!==target,
+        symbolsMissing:[...'()":'].filter(c=>target.includes(c)).filter(c=>(v.split(c).length)<(target.split(c).length)).join(' ')};
+      r.correct=r.typing.exact; r.points=r.typing.exact?2:(acc>=0.85?1:0);
+      st.res[q.id]=r; save(); updateTop();
+      fb.className='fb good'; fb.textContent=r.typing.exact?'✅ Perfect typing!':'👍 Nice typing!';
+      inp.disabled=true; document.getElementById('ck').disabled=true; next();
+    };
+    document.getElementById('ck').onclick=done;
+  }
+}
+
+function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=1;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
+
+function correctText(q,name){
+  if(q.type==='mcq')return strip(q.ans);
+  if(q.type==='fill')return q.ans[0];
+  if(q.type==='tapbug')return strip(q.blocks.find(b=>b.bug).h);
+  if(q.type==='order')return (q.accept?q.accept[0].map(i=>q.items[i]):q.items).map(strip).join(' → ')+(q.accept&&q.accept.length>1?' (B part first is also right)':'');
+  if(q.type==='match')return q.pairs.map(p=>strip(p[0])+' = '+p[1]).join('; ');
+  if(q.type==='type')return q.target.replace('{NAME}',name||'');
+  return '—';
+}
+
+/* Plain-language account of what the student did on one question */
+const LONG_WINDOW=20; // seconds in another window (e.g. Zoom) before it is flagged
+const awayFlag=a=>a.kind==='hidden'||a.kind==='left'||a.dur>LONG_WINDOW;
+const awayOne=a=>(a.kind==='hidden'?`page hidden (another tab or browser minimised) for ${a.dur}s, after ${a.at}s on this question`:a.kind==='left'?`left the page completely (another website in this tab, reload, or closed it) for ${a.dur}s, after ${a.at}s on this question; the question started again when she came back`:`clicked another window, page still on screen (e.g. Zoom) for ${a.dur}s${a.dur>LONG_WINDOW?' (long)':''}`)+(a.clock?` at ${a.clock}`:'');
+const awayText=r=>(r&&r.away&&r.away.length)?r.away.map(a=>(awayFlag(a)?'⚠️ ':'')+awayOne(a)).join('; '):'';
+const withNav=(q,r)=>{const nav=(st.navAway||[]).filter(n=>n.id===q.id).map(n=>({...n,kind:n.kind||'left'}));return nav.length?{...(r||{}),away:[...((r&&r.away)||[]),...nav]}:r};
+function trail(q,r){r=withNav(q,r);const t=trailCore(q,r),a=awayText(r);return a?`${t}. ${a.charAt(0).toUpperCase()+a.slice(1)}`:t}
+function trailCore(q,r){
+  if(!r||!r.log)return 'Not answered';
+  if(q.type==='type'){const t=r.typing;if(!t)return 'Not answered';const m=mindText({fixes:t.fixes||[],pauses:t.pauses||[]});
+    return `Typed "${vis(t.typed)}"`+(r.firstMs>3000?` (waited ${secs(r.firstMs)}s before the first key)`:'')+(m?'. While typing she '+m:'. No corrections or long pauses')}
+  if(q.type==='match'&&r.dontKnow){const w=r.log.filter(e=>e.k==='pair'&&e.ok===false).length,ok=r.log.filter(e=>e.k==='pair'&&e.ok).length;return `Matched ${ok} correctly${w?', '+w+' wrong pair'+(w>1?'s':''):''}, then said "I don't know" after ${(r.log.find(e=>e.k==='dontknow')||{}).s}s`}
+  if(q.type==='match'){
+    const wrongs=r.log.filter(e=>e.k==='pair'&&e.ok===false).map(e=>e.v);
+    const sw=r.log.filter(e=>e.k==='switch').length;
+    return (wrongs.length?`Wrong pairs first: ${wrongs.join('; ')}. `:'No wrong pairs. ')+(sw?`Changed which block she picked ${sw} time${sw>1?'s':''}. `:'')+`Finished in ${secs(r.ms)}s.`;
+  }
+  const out=[]; let picks=[], steps=[], undos=0, edits='';
+  r.log.forEach(e=>{
+    if(e.k==='pick')picks.push(`${e.v} (${e.s}s)`);
+    else if(e.k==='add')steps.push('+ '+e.v);
+    else if(e.k==='undo'){steps.push('undo '+e.v);undos++}
+    else if(e.k==='edit')edits=e.v;
+    else if(e.k==='dontknow'){out.push(`said "I don't know" after ${e.s}s${picks.length?' (had tapped '+picks.join(' → ')+' first)':''}`);picks=[]}
+    else if(e.k==='check'){
+      let s='';
+      if(picks.length>1)s+=`tapped ${picks.join(' → ')} (changed ${picks.length-1}×), then `;
+      if(undos)s+=`built step by step: ${steps.join(', ')}; then `;
+      if(edits)s+=`(while typing she ${edits}) `;
+      s+= q.type==='survey' ? `chose "${e.v}"` : `checked "${e.v}" ${e.ok?'✓ right':'✗ wrong'} at ${e.s}s`;
+      out.push(s); picks=[]; steps=[]; undos=0; edits='';
+    }
+  });
+  return out.length?out.map((s,i)=>(q.type==='survey'?'':`Try ${i+1}: `)+s.charAt(0).toUpperCase()+s.slice(1)).join('. '):'Not answered';
+}
+const vis=s=>String(s).replace(/ /g,'·');
+function tyNote(t){if(t.exact)return'Exact';const n=[];
+  if(t.typed.replace(/\s+/g,' ').trim()===t.target)n.push('only extra or missing spaces');
+  else if(t.caseErr)n.push('capital letters wrong');
+  const miss=t.target.split(/[^A-Za-z]+/).filter(w=>w&&!t.typed.includes(w));if(miss.length)n.push('left out word: '+miss.join(', '));
+  if(t.symbolsMissing)n.push('left out symbol: '+t.symbolsMissing);
+  if(/\s{2,}/.test(t.typed)||t.typed!==t.typed.trim())n.push('extra spaces');
+  return n.join('; ')||'small differences'}
+
+/* ---------- Finish (student sees only a smiley) ---------- */
+function finish(){
+  cur=null;
+  if(!st.endedAt){st.endedAt=now();save()}
+  document.getElementById('prog').style.width='100%';
+  stage.innerHTML=`<div class="center pop" style="padding:30px 0">
+    <div id="smile" style="font-size:150px;line-height:1;cursor:default;user-select:none;-webkit-user-select:none">😊</div>
+    <div class="q" style="margin-top:18px">Submitted! Great job, ${esc(st.name)}! 🎉</div>
+    <div id="gate" class="hidden" style="margin-top:26px">
+      <div class="row" style="justify-content:center"><input class="txt" id="pin" type="password" placeholder="PIN" style="max-width:160px" inputmode="numeric" autocomplete="off"><button class="btn ghost" id="tv">Open</button></div>
+      <div class="fb bad" id="pf"></div>
+    </div></div>`;
+  // Hidden door: tap the smiley 3 times quickly to show the PIN box.
+  let taps=0,tt=null;
+  document.getElementById('smile').onclick=()=>{taps++;clearTimeout(tt);tt=setTimeout(()=>taps=0,1500);
+    if(taps>=3){taps=0;document.getElementById('gate').classList.remove('hidden');document.getElementById('pin').focus()}};
+  const go=()=>{if(document.getElementById('pin').value.trim()==='2468')teacher();else{document.getElementById('pf').textContent='Wrong PIN';document.getElementById('pin').value=''}};
+  document.getElementById('tv').onclick=go;
+  document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+  sendToTeacher();
+}
+
+/* ---------- Send report to teacher's private ntfy.sh feed ---------- */
+function teacherTopic(){const m=(location.hash||'').match(/^#r-([A-Za-z0-9-]{6,64})$/);return m?'rbc-'+m[1]:null}
+function chunks(text,maxBytes){const enc=new TextEncoder(), out=[]; let cur='';
+  text.split('\n').forEach(line=>{const cand=cur?cur+'\n'+line:line; if(enc.encode(cand).length>maxBytes&&cur){out.push(cur);cur=line}else cur=cand}); if(cur)out.push(cur); return out}
+async function sendToTeacher(attempt=1){
+  const topic=teacherTopic(); if(!topic||st.sent) return;
+  const {title,report}=analyse();
+  const parts=chunks(report,3800);
+  try{
+    for(let i=(st.sentParts||0);i<parts.length;i++){
+      const t=parts.length>1?`${title} (${i+1}/${parts.length})`:title;
+      const res=await fetch('https://ntfy.sh/'+topic+'?title='+encodeURIComponent(t)+'&tags=robot',{method:'POST',body:parts[i]});
+      if(!res.ok) throw new Error(res.status);
+      st.sentParts=i+1; save();
+    }
+    st.sent=true; save();
+  }catch(e){ if(attempt<4) setTimeout(()=>sendToTeacher(attempt+1),3000*attempt); }
+}
+
+/* ---------- Analysis: scores, 6 checks, outcome, plan ---------- */
+function analyse(){
+  const R=st.res, get=id=>R[id]||{points:0,ms:0,attempts:0,answers:[],log:[]};
+  const P=id=>get(id).points||0, OK=id=>!!get(id).correct;
+  const sum=ids=>ids.reduce((a,id)=>a+P(id),0);
+  const secIds=s=>QUESTIONS.filter(q=>q.sec===s).map(q=>q.id);
+  const sections=['Thinking','Blocks','Bug hunt','Robot code','Typing'].map(s=>({name:s,pts:sum(secIds(s)),max:secIds(s).length*2,first:secIds(s).filter(id=>P(id)===2).length,n:secIds(s).length}));
+  const t1=get('e1').typing, t2=get('e2').typing, t3=get('e3').typing;
+  const dAvg=Math.round(['d1','d2','d3','d4'].reduce((a,id)=>a+(get(id).ms||0),0)/4000);
+  const ans=id=>(get(id).answers||[]).join(' then ')||'no answer';
+  const want=((get('f3').answers||[])[0]||'—');
+  const wantsYes=/^Yes/.test(want);
+  const ageN=parseFloat(st.age);
+
+  const allSym=t=>t&&[...'()":'].filter(c=>t.target.includes(c)).every(c=>t.typed.split(c).length>=t.target.split(c).length);
+  const words=t=>t&&t.target.split(/[^A-Za-z]+/).filter(Boolean).every(w=>t.typed.includes(w));
+  const notYet=/^Not yet/.test(want);
+  const checks=[
+   {grp:'T0',name:'Strong reasoning',qs:'A1–A5',pass:sum(secIds('Thinking'))>=7,detail:`${sum(secIds('Thinking'))}/10 points (need 7)`,why:'T1 problems have more steps and are more abstract.'},
+   {grp:'T0',name:'Block coding mastered',qs:'B1–B6 (nested loops, variables, events, building)',pass:sum(secIds('Blocks'))>=9,detail:`${sum(secIds('Blocks'))}/12 points (need 9)`,why:'T1 teaches the same ideas in text; they must be solid in blocks first.'},
+   {grp:'T0',name:'Debugs and uses variables',qs:'C1–C4',pass:sum(secIds('Bug hunt'))>=6,detail:`${sum(secIds('Bug hunt'))}/8 points (need 6)`,why:'Typed code breaks often; she must find mistakes herself. Variables appear from the start of T1.'},
+   {grp:'READY',name:'Copies code accurately',qs:'E2 print line, E3 for line',pass:!!(t2&&t3&&t2.accuracy>=90&&t3.accuracy>=90&&allSym(t2)&&allSym(t3)&&words(t2)&&words(t3)),detail:t2&&t3?`E2 ${t2.accuracy}%, E3 ${t3.accuracy}%`+[!words(t2)||!words(t3)?' · left out a word':'',!allSym(t2)||!allSym(t3)?' · left out a bracket, quote or colon':''].join('')+' (need 90% each, nothing left out)':'not done',why:'In T1 every line is typed; a missing bracket, quote or colon stops the program.'},
+   {grp:'READY',name:'Types at a working speed',qs:'E1 plain sentence',pass:!!(t1&&t1.cpm>=50),detail:t1?`${t1.cpm} chars/min, about ${t1.wpm} words/min (need 50 chars/min)`:'not done',why:'A slow typist spends T1 classes typing instead of learning.'},
+   {grp:'READY',name:'Wants to type real code',qs:'F3',pass:!notYet&&want!=='—',detail:`Answered: ${want}`,why:'Moving up works when the student wants the challenge.'},
+  ];
+  const t0Pass=checks.filter(c=>c.grp==='T0').every(c=>c.pass);
+  const readyPassed=checks.filter(c=>c.grp==='READY'&&c.pass).length;
+  const passed=checks.filter(c=>c.pass).length;
+  const failed=checks.filter(c=>!c.pass);
+  // Head start in text code (not a gate: T1 teaches this)
+  const dIds=['d1','d2','d3','d4'];
+  const head={pts:sum(dIds),right:dIds.filter(OK),dk:dIds.filter(id=>get(id).dontKnow)};
+  const dLabel={d1:'variables and print (x + 3)',d2:'for-loops',d3:'if / else',d4:'print syntax'};
+  const knows=head.right.map(id=>dLabel[id]), teach=dIds.filter(id=>!OK(id)).map(id=>dLabel[id]);
+  const coreWeak=sum([...secIds('Blocks'),...secIds('Bug hunt')])<10;
+
+  let outcome,cls,headline,reason,risk,plan,signs,parent;
+  const list=a=>a.map(c=>c.name.replace(/^./,m=>m.toLowerCase())).join(', ');
+  if(t0Pass && readyPassed===3){
+    outcome='UPGRADE to T1';cls='up';
+    headline='Ready to start T1: passed all 6 checks.';
+    reason='Her T0 skills are strong, she types code accurately at a working speed, and she wants the challenge. T1 will teach her Python from the start.'+(head.pts>=6?' She already reads some Python, which is a head start.':'');
+  } else if(t0Pass){
+    outcome='SAME TIER (T0), advanced track';cls='adv';
+    headline=`Strong in T0, not ready to start T1 yet (${passed}/6 checks).`;
+    reason=`She passed all 3 T0 checks but not: ${list(failed)}.`+(failed.some(c=>c.name==='Wants to type real code')?' She said "Not yet" to typing real code, so moving her now risks losing interest.':' Typing is the gate for T1: every class is typed code.')+' Because she is strong in T0, the main risk here is BOREDOM: she needs extra challenge every class.';
+  } else {
+    outcome='SAME TIER (T0)';cls='same';
+    headline=`Stay in T0 at the normal pace (${passed}/6 checks).`;
+    reason=`One or more T0 skills are not secure yet (${list(failed.filter(c=>c.grp==='T0'))}).`+(coreWeak?' Block basics are weak: flag for learning support in T0.':'');
+  }
+  if(cls==='up'){
+    risk='Too hard: struggling with typed code in the first few classes.';
+    plan=['Attach this report to the tier-change ticket so the new T1 instructor knows her strengths and gaps before her first T1 class.',(knows.length?`T1 instructor: she can already work out ${knows.join(', ')}; teach first: ${teach.length?teach.join(', '):'nothing extra'}.`:`T1 instructor: she has not learned Python yet, so teach from the start (${teach.join(', ')}).`),'T1 instructor: start with quick wins so she feels successful early, and check her confidence after each of the first classes.'];
+    signs=['Not finishing tasks','Frustration or going quiet','Camera off / disengaged','Parent says it is too hard'];
+    parent=`"${st.name} is ready for the next level. We will support her through the first few classes of typed code."`;
+  } else if(cls==='adv'){
+    risk='Too easy: boredom, which can lead to cancelling.';
+    plan=['Current PG: a bonus mission every class: same project with a twist (shake, tilt, A+B, a counter, if/else, or her own idea).',`Bridge to T1: show the JavaScript/Python view of her blocks in MakeCode a few minutes each week.`,`Typing practice: 5 minutes a few times a week (letters, then brackets, quotes and colons)${failed.some(c=>c.name==='Types at a working speed')?' to build speed':''}${failed.some(c=>c.name==='Copies code accurately')?' and accuracy with symbols':''}.`,'Recognition: give her the challenge first and let her show her solution to the class.',`What is holding her back from T1: ${list(failed)}.`];
+    signs=['Finishes early and sits idle','Says it is easy or boring','Camera off / distracted','Parent asks for more challenge'];
+    parent=`"${st.name} is one of the strongest in her group, so she will get extra challenges every class and start seeing real code."`;
+  } else {
+    risk=coreWeak?'Too hard even in T0: frustration.':'Low: normal T0 pace.';
+    plan=coreWeak?[`Learning support on: ${list(failed.filter(c=>c.grp==='T0'))}.`,'Small steps and frequent praise.','PG checks understanding at the end of each task.']:['Follow the normal T0 plan.',`Practise: ${list(failed.filter(c=>c.grp==='T0'))||'—'}.`];
+    signs=coreWeak?['Not finishing tasks','Frustration or going quiet','Parent says it is too hard']:['Losing interest','Not finishing tasks'];
+    parent=`"${st.name} is building strong foundations in block coding and we will keep growing her skills step by step."`;
+  }
+  const ageNote = (cls==='up' && ageN && ageN<9) ? `Age ${st.age} is below the T1 band (9–10): raise a tier-change ticket.` : (ageN&&ageN>=9&&cls!=='up'?`Age ${st.age} is above the T0 band (7–8): check the age alignment.`:'');
+  const safety = cls==='up'
+    ? 'Who watches: the new T1 instructor, in her first T1 classes. If the warning signs show in 2 classes, raise a ticket to review the placement.'
+    : 'Who watches: her current PG, in her next classes. If the warning signs show in 2 classes, raise a ticket to review the placement.';
+  const who = cls==='up' ? 'the new T1 instructor' : 'her current PG';
+
+  // behaviour notes
+  const tries2=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).attempts===2).map(q=>q.id.toUpperCase());
+  const changedMind=r=>{let n=0,c=false;(r.log||[]).forEach(e=>{if(e.k==='pick'){n++;if(n>1)c=true}else if(e.k==='check'||e.k==='dontknow')n=0});return c};
+  const changed=QUESTIONS.filter(q=>changedMind(get(q.id))).map(q=>q.id.toUpperCase());
+  const slow=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).ms>45000).map(q=>`${q.id.toUpperCase()} (${secs(get(q.id).ms)}s)`);
+  const hesit=QUESTIONS.filter(q=>scored(q)&&(get(q.id).firstMs||0)>20000).map(q=>`${q.id.toUpperCase()} (${secs(get(q.id).firstMs)}s)`);
+  const nonType=QUESTIONS.filter(q=>scored(q)&&q.type!=='type');
+  const dk=QUESTIONS.filter(q=>get(q.id).dontKnow).map(q=>{const e=(get(q.id).log||[]).find(x=>x.k==='dontknow');return {id:q.id.toUpperCase(),s:e?e.s:0}});
+  const allAway=QUESTIONS.flatMap(q=>((withNav(q,get(q.id))||{}).away||[]).map(a=>({...a,id:q.id.toUpperCase()})));
+  const hiddenA=allAway.filter(a=>a.kind==='hidden'), leftA=allAway.filter(a=>a.kind==='left'), winA=allAway.filter(a=>a.kind==='window'), longWin=winA.filter(a=>a.dur>LONG_WINDOW);
+  const fmt=a=>`${a.id} (${a.dur}s${a.clock?' at '+a.clock:''})`;
+  const awayFlagged=hiddenA.length+leftA.length+longWin.length;
+  const awaySummary=[
+    leftA.length?`⚠️ Left the page completely ${leftA.length} time${leftA.length>1?'s':''} (went to another website in this tab, reloaded, or closed it): ${leftA.map(fmt).join(', ')}.`:'Never left the page completely.',
+    hiddenA.length?`⚠️ Page hidden ${hiddenA.length} time${hiddenA.length>1?'s':''} (another tab or browser minimised): ${hiddenA.map(fmt).join(', ')}. Check whether she looked up answers or got help.`:'Never switched to another tab or minimised the browser.',
+    winA.length?`${longWin.length?'⚠️ ':''}Clicked another window with the page still on screen (e.g. Zoom to unmute or reply) ${winA.length} time${winA.length>1?'s':''}: ${winA.map(fmt).join(', ')}${longWin.length?`. Long (over ${LONG_WINDOW}s): ${longWin.map(fmt).join(', ')}`:'. All short: normal.'}`:'Did not click away to another window.'];
+  const dkText=dk.map(d=>`${d.id} (after ${d.s}s${d.s<5?', quick':''})`);
+  const dkBySec=['Thinking','Blocks','Bug hunt','Robot code'].map(sn=>({sn,n:QUESTIONS.filter(q=>q.sec===sn&&get(q.id).dontKnow).length})).filter(x=>x.n);
+  const avgThink=Math.round(nonType.reduce((a,q)=>a+(get(q.id).ms||0),0)/nonType.length/1000);
+  const totalMin=((st.endedAt-st.startedAt)/60000).toFixed(1);
+  const thinkMin=nonType.reduce((a,q)=>a+(get(q.id).ms||0),0)/60000;
+  const pace=thinkMin?(nonType.length/thinkMin).toFixed(1):'0';
+  const rightFirst=nonType.filter(q=>P(q.id)===2).length;
+  const codeTy=[t2,t3].filter(Boolean);
+  const codeCpm=codeTy.length?Math.round(codeTy.reduce((a,t)=>a+t.cpm,0)/codeTy.length):0;
+  const lineSec=codeCpm?Math.round(25/codeCpm*60):null;            // a typical T1 line ≈ 25 characters
+  const progMin=lineSec?Math.max(1,Math.round(lineSec*10/60)):null;   // a 10-line program
+  const F=n=>checks.find(c=>c.name===n);
+  const future=[];
+  if(!F('Copies code accurately').pass)future.push({c:'Copying code accurately',impact:'Every T1 line is typed. Missing a word, bracket, quote or colon stops the program, so she would spend class fixing typos and need the PG often.',todo:'Typing practice with symbols: ( ) " " : . Copy short lines of code exactly.'});
+  if(!F('Types at a working speed').pass)future.push({c:'Typing speed',impact:`${codeCpm?`At her code typing speed (~${codeCpm} chars/min) one line takes about ${lineSec}s and a 10-line program about ${progMin} min just to type, `:''}so she would finish fewer tasks than the class and may lose confidence.`,todo:'5 minutes of typing practice a few times a week.'});
+  if(!F('Wants to type real code').pass)future.push({c:'Motivation',impact:'If she does not want to type code yet, T1 can feel like hard work and she may lose interest.',todo:'Show her fun things the text view can do; let her try one typed line at a time.'});
+  checks.filter(c=>c.grp==='T0'&&!c.pass).forEach(c=>future.push({c:c.name+' (T0 skill)',impact:'This is a T0 foundation; without it even T0 projects will feel hard, and T1 would be much harder.',todo:'Focus here first in T0, with small steps and praise.'}));
+  future.push({c:`Python head start: ${head.pts}/8`,impact:knows.length?`She can already work out: ${knows.join(', ')}.`:'She does not know Python yet. That is normal: T1 teaches it from the start.',todo:teach.length?`In T1, teach first: ${teach.join(', ')}.`:'She can move quickly through the first T1 lessons.'});
+  const totalPts=sections.reduce((a,s)=>a+s.pts,0), totalMax=sections.reduce((a,s)=>a+s.max,0);
+  const feel=['f1','f2','f3'].map(id=>(get(id).answers||[])[0]||'—');
+  const ty=[t1,t2,t3].filter(Boolean);
+
+  // plain-text report (sent to the teacher feed and shown for copying)
+  const L=[];
+  L.push(`ROBOT BRAIN CHALLENGE: ${st.name}${st.age?' (age '+st.age+')':''}`);
+  L.push(`${new Date(st.startedAt).toLocaleString()} · took ${totalMin} min · ${totalPts}/${totalMax} points`);
+  L.push('');
+  L.push(`OUTCOME: ${outcome}`);
+  L.push(headline); L.push(reason); if(ageNote)L.push(ageNote);
+  L.push('');
+  L.push(`CHECKS (${passed}/6; upgrade needs all 6. Python knowledge is NOT required: T1 teaches it):`);
+  checks.forEach(c=>L.push(`${c.pass?'✅':'❌'} ${c.grp==='T0'?'T0 skill':'Ready for T1'} · ${c.name} [${c.qs}]: ${c.detail}`));
+  L.push(`Python head start (not a check): ${head.pts}/8 · knows: ${knows.join(', ')||'none yet'}${head.dk.length?' · said "I don\'t know" on '+head.dk.map(x=>x.toUpperCase()).join(', '):''}`);
+  L.push('');
+  L.push(`RETENTION RISK: ${risk}`);
+  L.push('PLAN:'); plan.forEach(p=>L.push('• '+p));
+  L.push('WATCH FOR: '+signs.join('; ')); L.push(safety);
+  L.push('TELL THE PARENT: '+parent);
+  L.push('');
+  L.push('SECTIONS: '+sections.map(s=>`${s.name} ${s.pts}/${s.max} (${s.first}/${s.n} right first try)`).join(' · '));
+  L.push(`HOW SHE WORKED: avg ${avgThink}s per question`+(tries2.length?` · needed 2 tries: ${tries2.join(', ')}`:'')+(changed.length?` · changed her answer before checking: ${changed.join(', ')}`:'')+(slow.length?` · slow (>45s): ${slow.join(', ')}`:'')+(hesit.length?` · long pause before starting (>20s): ${hesit.join(', ')}`:'')+(dk.length?` · said "I don't know": ${dkText.join(', ')}`:' · never said "I don\'t know"'));
+  L.push('LEAVING THE PAGE: '+awaySummary.join(' '));
+  L.push(`SPEED: answered ${pace} questions per minute (${rightFirst}/${nonType.length} right first try)`+(t1?` · plain typing ${t1.cpm} chars/min (~${t1.wpm} words/min)`:'')+(codeCpm?` · code typing ${codeCpm} chars/min → ~${lineSec}s per line of Python, ~${progMin} min for a 10-line program`:''));
+  L.push(`FEELINGS: ${feel[0]} · hardest: ${feel[1]} · wants to type code: ${feel[2]}`);
+  L.push('');
+  L.push(cls==='up'?'WHAT TO EXPECT IN T1 (typed code):':'IF SHE MOVED TO T1 (typed code) NOW:');
+  future.forEach(f=>L.push(`• ${f.c}: ${f.impact} → To do: ${f.todo}`));
+  L.push('');
+  L.push('QUESTION BY QUESTION (points: 2 = right first try, 1 = right on 2nd try, 0 = not right):');
+  QUESTIONS.forEach(q=>{const r=get(q.id);
+    L.push(`${q.id.toUpperCase()} ${q.sec}${scored(q)?' · '+(r.points||0)+'/2':''} · ${secs(r.ms)}s — tests: ${q.tests}. ${q.type!=='survey'?'Answer: '+correctText(q,st.name)+'. ':''}She: ${trail(q,r)}`)});
+  L.push('');
+  L.push('TYPING (· = a space):');
+  ty.forEach(t=>L.push(`"${t.target}" → "${vis(t.typed)}": ${t.accuracy}% accurate, ${t.cpm} chars/min (~${t.wpm} words/min), ${t.secs}s, ${t.keys} keys for ${t.needed} characters, ${t.backspaces} backspaces; ${tyNote(t)}`+((t.fixes||[]).length||(t.pauses||[]).length?`. Her thinking: ${mindText({fixes:t.fixes||[],pauses:t.pauses||[]})}`:'')));
+
+  return {title:`${st.name}${st.age?' ('+st.age+')':''}: ${outcome} - ${passed}/6 checks`, report:L.join('\n'),
+    outcome,cls,headline,reason,ageNote,who,awaySummary,awayFlagged,head,knows,teach,dk,dkText,dkBySec,pace,rightFirst,nonTypeN:nonType.length,codeCpm,lineSec,progMin,future,risk,plan,signs,parent,safety,checks,passed,sections,tries2,changed,slow,hesit,avgThink,totalMin,totalPts,totalMax,feel,ty,get};
+}
+
+/* ---------- Teacher report (screen) ---------- */
+function teacher(){
+  const A=analyse(), get=A.get;
+  document.getElementById('topbar').classList.add('hidden');
+  const pill=p=>`<span class="pill p${p}">${p}/2</span>`;
+  const qRows=QUESTIONS.map(q=>{const r=get(q.id);
+    return `<tr><td><b>${q.id.toUpperCase()}</b><br><span class="small">${q.sec}</span></td>
+      <td>${esc(q.tests)}<div class="small">${esc(strip(q.q))}${q.big?' '+esc(q.big):''}</div></td>
+      <td class="small">${q.type==='survey'?'—':esc(correctText(q,st.name))}</td>
+      <td>${esc(trail(q,r))}</td>
+      <td>${scored(q)?pill(r.points||0):'—'}</td>
+      <td>${secs(r.ms)}s${r.firstMs>20000?`<div class="small">paused ${secs(r.firstMs)}s</div>`:''}</td></tr>`}).join('');
+  const tyRows=A.ty.map(t=>`<tr><td class="mono">${esc(t.target)}</td><td class="mono">${esc(vis(t.typed))}</td><td>${t.accuracy}%</td><td>${t.cpm}<div class="small">~${t.wpm} words/min</div></td><td>${t.secs}s</td><td>${t.keys} for ${t.needed}</td><td>${t.backspaces}</td><td>${esc(tyNote(t))}</td><td class="small">${esc(mindText({fixes:t.fixes||[],pauses:t.pauses||[]})||'No corrections or long pauses')}</td></tr>`).join('');
+  const report=A.report;
+
+  stage.innerHTML=`
+   <div class="t-h">Teacher report: ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
+   <div class="t-sub">${new Date(st.startedAt).toLocaleString()} · took ${A.totalMin} min · ${A.totalPts}/${A.totalMax} points</div>
+
+   <div class="verdict ${A.cls}">
+     <h3>${esc(A.outcome)}</h3>
+     <div style="font-weight:700">${esc(A.headline)}</div>
+     <div>${esc(A.reason)}</div>
+     ${A.ageNote?`<div style="margin-top:6px"><b>${esc(A.ageNote)}</b></div>`:''}
+   </div>
+
+   <div class="sec">The 6 checks <span class="small">(upgrade needs all 6. Knowing Python is not required: T1 teaches it)</span></div>
+   <div style="overflow:auto"><table>
+     <tr><th></th><th>Check</th><th>Questions</th><th>Her result</th><th>Why it matters</th></tr>
+     ${A.checks.map(c=>`<tr><td>${c.pass?'✅':'❌'}</td><td><b>${c.name}</b><div class="small">${c.grp==='T0'?'T0 skill':'Ready for T1'}</div></td><td class="small">${esc(c.qs)}</td><td>${esc(c.detail)}</td><td class="small">${esc(c.why)}</td></tr>`).join('')}
+   </table></div>
+
+   <div class="plan" style="margin-top:10px"><b>Python head start (not a check): ${A.head.pts}/8.</b> Knows: ${esc(A.knows.join(', ')||'none yet')}. Teach first in T1: ${esc(A.teach.join(', ')||'nothing extra')}.${A.head.dk.length?' Said "I don\'t know" on '+A.head.dk.map(x=>x.toUpperCase()).join(', ')+'.':''}</div>
+
+   <div class="sec">Retention plan</div>
+   <div class="plan">
+     <div><b>Main risk:</b> ${esc(A.risk)}</div>
+     <div style="margin-top:6px"><b>What to do:</b><ul>${A.plan.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div>
+     <div><b>Warning signs for ${esc(A.who)} to watch:</b> ${esc(A.signs.join('; '))}.</div>
+     <div style="margin-top:6px">${esc(A.safety)}</div>
+     <div style="margin-top:6px"><b>Tell the parent:</b> ${esc(A.parent)}</div>
+   </div>
+
+   <div class="sec">Section scores</div>
+   <div class="grid">${A.sections.map(s=>`<div class="kpi"><b>${s.pts}/${s.max}</b><span>${s.name} · ${s.first}/${s.n} right first try</span></div>`).join('')}
+     <div class="kpi"><b>${A.avgThink}s</b><span>Average time per question</span></div>
+     <div class="kpi"><b>${esc(A.feel[2])}</b><span>Wants to type real code?</span></div></div>
+
+   <div class="sec">Speed</div>
+   <div class="grid">
+     <div class="kpi"><b>${A.pace}</b><span>Questions answered per minute (${A.rightFirst}/${A.nonTypeN} right first try)</span></div>
+     ${A.ty[0]?`<div class="kpi"><b>${A.ty[0].wpm}</b><span>Words per minute, plain typing (${A.ty[0].cpm} chars/min)</span></div>`:''}
+     ${A.codeCpm?`<div class="kpi"><b>${A.codeCpm}</b><span>Chars/min typing code</span></div><div class="kpi"><b>~${A.lineSec}s</b><span>To type one line of Python (~25 chars)</span></div><div class="kpi"><b>~${A.progMin} min</b><span>To type a 10-line T1 program</span></div>`:''}
+   </div>
+
+   <div class="sec">${A.cls==='up'?'What to expect in T1 (typed code)':'If she moved to T1 (typed code) now'}</div>
+   <div style="overflow:auto"><table>
+     <tr><th>Challenge</th><th>Impact in class</th><th>What to do</th></tr>
+     ${A.future.map(f=>`<tr><td><b>${esc(f.c)}</b></td><td>${esc(f.impact)}</td><td>${esc(f.todo)}</td></tr>`).join('')}
+   </table></div>
+
+   <div class="sec">How she worked</div>
+   <ul class="small" style="font-size:15px">
+     <li>Needed a second try: ${A.tries2.join(', ')||'none'}</li>
+     <li>Changed her answer before pressing Check: ${A.changed.join(', ')||'none'}</li>
+     <li>Slow (over 45s): ${A.slow.join(', ')||'none'}</li>
+     <li>Long pause before starting (over 20s): ${A.hesit.join(', ')||'none'}</li>
+     <li${A.awayFlagged?' style="color:#A1262A;font-weight:600"':''}>Leaving the page: ${esc(A.awaySummary.join(' '))}</li>
+     <li>Said "I don't know" (0 points, no guessing): ${A.dkText.join(', ')||'never'}${A.dkBySec.length?' · by section: '+A.dkBySec.map(x=>x.sn+' '+x.n).join(', '):''}. "Quick" = under 5 seconds, so she may not have tried.</li>
+     <li>Felt: ${esc(A.feel[0])} · Hardest part: ${esc(A.feel[1])}</li>
+   </ul>
+
+   <div class="sec">Question by question</div>
+   <div style="overflow:auto"><table>
+     <tr><th>#</th><th>What it tests</th><th>Correct answer</th><th>What she did</th><th>Points</th><th>Time</th></tr>${qRows}
+   </table></div>
+
+   <div class="sec">Typing</div>
+   <div style="overflow:auto"><table>
+     <tr><th>Target</th><th>She typed (· = space)</th><th>Accuracy</th><th>Chars/min</th><th>Time</th><th>Keys pressed</th><th>Backspaces</th><th>What was wrong</th><th>Her thinking (corrections, pauses over 3s)</th></tr>${tyRows}
+   </table></div>
+
+   <div class="sec">How to read this report</div>
+   <ul class="small" style="font-size:14px">
+     <li><b>Points:</b> 2 = right on the first try, 1 = right on the second try, 0 = not right. Each question allows 2 tries; after that the answer is shown.</li>
+     <li><b>What she did:</b> every option or block she tapped, in order, with the second it happened. "Changed" means she picked one answer, then another, before pressing Check. For typed answers, "corrected" shows the text before she deleted and what was left after deleting; "paused" shows where she stopped for more than 3 seconds, which usually shows the exact spot she was unsure about.</li>
+     <li><b>No guessing:</b> answers are typed, built or fixed, not picked from a list. Tap-the-bug questions allow one try only.</li>
+     <li><b>Leaving the page</b> (2 seconds or more, with the question she was on): <b>Left the page completely</b> = she went to another website in the same tab, reloaded, or closed it and came back (always flagged; that question starts again). <b>Page hidden</b> = she switched to another browser tab or minimised the browser (the page cannot tell which), which is how someone would look up an answer, so it is always flagged. <b>Clicked another window</b> = the page stayed on screen while she used another app, usually Zoom to unmute or reply; this is normal and only flagged if longer than 20s. The page cannot see which app or site she opened: if she uses Zoom in a browser tab, that also shows as page hidden. Ask her to share her screen to see exactly what she opens.</li>
+     <li><b>I don't know:</b> every question (except typing) has this button. It gives 0 points and ends the question, so a right answer means she really knew it, not a lucky guess. "Quick" means she tapped it in under 5 seconds.</li>
+     <li><b>Time:</b> from the question appearing to her final answer. "Paused" = time before her first tap or key.</li>
+     <li><b>Accuracy:</b> how close her typing is to the target (100% = exact). <b>Chars/min:</b> characters typed per minute; ÷5 ≈ words per minute. <b>Keys pressed</b> above the length needed means she was correcting.</li>
+     <li><b>Outcome rules:</b> Upgrade = all 6 checks: strong reasoning, blocks and debugging (T0 skills), plus copies code accurately, types at a working speed (50+ chars/min) and wants to type code (ready for T1). Python knowledge is not needed: the Robot code questions only show a head start. Advanced track = all T0 skills strong but not ready for T1 yet (boredom risk). Same tier = a T0 skill is still developing.</li>
+     <li>This is a 15-minute test: add what you saw live before recording the decision. The plan names who follows up: the new T1 instructor after an upgrade, or the current PG if she stays.</li>
+   </ul>
+
+   <div class="sec">Copy for notes</div>
+   <textarea class="report" id="rep" readonly>${esc(report)}</textarea>
+   <div class="row"><button class="btn" id="cp">Copy report</button><button class="btn ghost" id="again">New student</button><span class="small" id="cpm"></span></div>`;
+  document.getElementById('cp').onclick=async()=>{const ta=document.getElementById('rep');try{await navigator.clipboard.writeText(ta.value);document.getElementById('cpm').textContent='Copied ✓'}catch(e){ta.focus();ta.select();document.getElementById('cpm').textContent='Selected: press Ctrl+C'}};
+  document.getElementById('again').onclick=()=>{try{localStorage.removeItem('rbc_state')}catch(e){}document.getElementById('topbar').classList.remove('hidden');st={name:'',age:'',startedAt:null,endedAt:null,idx:-1,res:{}};updateTop();startScreen(null)};
+}
+
+/* ---------- Boot ---------- */
+startScreen(load());
+
+</script>
+</body>
+</html>
