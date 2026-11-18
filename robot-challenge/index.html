@@ -531,12 +531,12 @@ function analyse(){
   }
   if(cls==='up'){
     risk='Too hard: struggling with typed code in the first few classes.';
-    plan=[`Extra help with typing and syntax in the first 2–3 sessions${failed.length?' (especially: '+list(failed)+')':''}.`,'Start with quick wins so she feels successful early.','PG checks in with her on confidence after each of the first sessions.'];
+    plan=['Attach this report to the tier-change ticket so the new T1 instructor knows her strengths and gaps before her first T1 class.',`T1 instructor: extra help with typing and syntax in her first 2–3 T1 classes${failed.length?' (especially: '+list(failed)+')':''}.`,'T1 instructor: start with quick wins so she feels successful early, and check her confidence after each of the first classes.'];
     signs=['Not finishing tasks','Frustration or going quiet','Camera off / disengaged','Parent says it is too hard'];
     parent=`"${st.name} is ready for the next level. We will support her through the first few classes of typed code."`;
   } else if(cls==='adv'){
     risk='Too easy: boredom, which can lead to cancelling.';
-    plan=['Bonus mission every session: same project with a twist (shake, tilt, A+B, a counter, if/else, or her own idea).',`Bridge to T1: show the JavaScript/Python view of her blocks in MakeCode a few minutes each week${failed.some(c=>c.name==='Types code accurately')?', plus short typing practice':''}.`,'Recognition: give her the challenge first and let her show her solution to the class.',`Work on her T1 gaps inside T0: ${list(failed)}.`];
+    plan=['Current PG: a bonus mission every class: same project with a twist (shake, tilt, A+B, a counter, if/else, or her own idea).',`Bridge to T1: show the JavaScript/Python view of her blocks in MakeCode a few minutes each week${failed.some(c=>c.name==='Types code accurately')?', plus short typing practice':''}.`,'Recognition: give her the challenge first and let her show her solution to the class.',`Work on her T1 gaps inside T0: ${list(failed)}.`];
     signs=['Finishes early and sits idle','Says it is easy or boring','Camera off / distracted','Parent asks for more challenge'];
     parent=`"${st.name} is one of the strongest in her group, so she will get extra challenges every class and start seeing real code."`;
   } else {
@@ -546,7 +546,10 @@ function analyse(){
     parent=`"${st.name} is building strong foundations in block coding and we will keep growing her skills step by step."`;
   }
   const ageNote = (cls==='up' && ageN && ageN<9) ? `Age ${st.age} is below the T1 band (9–10): raise a tier-change ticket.` : (ageN&&ageN>=9&&cls!=='up'?`Age ${st.age} is above the T0 band (7–8): check the age alignment.`:'');
-  const safety='Safety net: the PG notes the warning signs in S2–S4 feedback. If they show in 2 sessions, raise a tier-change ticket.';
+  const safety = cls==='up'
+    ? 'Who watches: the new T1 instructor, in her first T1 classes. If the warning signs show in 2 classes, raise a ticket to review the placement.'
+    : 'Who watches: her current PG, in her next classes. If the warning signs show in 2 classes, raise a ticket to review the placement.';
+  const who = cls==='up' ? 'the new T1 instructor' : 'her current PG';
 
   // behaviour notes
   const tries2=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).attempts===2).map(q=>q.id.toUpperCase());
@@ -579,7 +582,7 @@ function analyse(){
   // plain-text report (sent to the teacher feed and shown for copying)
   const L=[];
   L.push(`ROBOT BRAIN CHALLENGE: ${st.name}${st.age?' (age '+st.age+')':''}`);
-  L.push(`${new Date(st.startedAt).toLocaleString()} · took ${totalMin} min · ${totalPts}/${totalMax} points`);
+  L.push(`Detailed second-level evaluation (PG unsure after the S1 form) · ${new Date(st.startedAt).toLocaleString()} · took ${totalMin} min · ${totalPts}/${totalMax} points`);
   L.push('');
   L.push(`OUTCOME: ${outcome}`);
   L.push(headline); L.push(reason); if(ageNote)L.push(ageNote);
@@ -608,7 +611,7 @@ function analyse(){
   ty.forEach(t=>L.push(`"${t.target}" → "${vis(t.typed)}": ${t.accuracy}% accurate, ${t.cpm} chars/min (~${t.wpm} words/min), ${t.secs}s, ${t.keys} keys for ${t.needed} characters, ${t.backspaces} backspaces; ${tyNote(t)}`+((t.fixes||[]).length||(t.pauses||[]).length?`. Her thinking: ${mindText({fixes:t.fixes||[],pauses:t.pauses||[]})}`:'')));
 
   return {title:`${st.name}${st.age?' ('+st.age+')':''}: ${outcome} - ${passed}/8 checks`, report:L.join('\n'),
-    outcome,cls,headline,reason,ageNote,pace,rightFirst,nonTypeN:nonType.length,codeCpm,lineSec,progMin,future,risk,plan,signs,parent,safety,checks,passed,sections,tries2,changed,slow,hesit,avgThink,totalMin,totalPts,totalMax,feel,ty,get};
+    outcome,cls,headline,reason,ageNote,who,pace,rightFirst,nonTypeN:nonType.length,codeCpm,lineSec,progMin,future,risk,plan,signs,parent,safety,checks,passed,sections,tries2,changed,slow,hesit,avgThink,totalMin,totalPts,totalMax,feel,ty,get};
 }
 
 /* ---------- Teacher report (screen) ---------- */
@@ -628,7 +631,7 @@ function teacher(){
 
   stage.innerHTML=`
    <div class="t-h">Teacher report: ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
-   <div class="t-sub">${new Date(st.startedAt).toLocaleString()} · took ${A.totalMin} min · ${A.totalPts}/${A.totalMax} points</div>
+   <div class="t-sub">Detailed second-level evaluation (used when the PG is still unsure after the S1 evaluation form) · ${new Date(st.startedAt).toLocaleString()} · took ${A.totalMin} min · ${A.totalPts}/${A.totalMax} points</div>
 
    <div class="verdict ${A.cls}">
      <h3>${esc(A.outcome)}</h3>
@@ -647,7 +650,7 @@ function teacher(){
    <div class="plan">
      <div><b>Main risk:</b> ${esc(A.risk)}</div>
      <div style="margin-top:6px"><b>What the PG should do:</b><ul>${A.plan.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div>
-     <div><b>Warning signs to watch in S2–S4:</b> ${esc(A.signs.join('; '))}.</div>
+     <div><b>Warning signs for ${esc(A.who)} to watch:</b> ${esc(A.signs.join('; '))}.</div>
      <div style="margin-top:6px">${esc(A.safety)}</div>
      <div style="margin-top:6px"><b>Tell the parent:</b> ${esc(A.parent)}</div>
    </div>
@@ -691,12 +694,13 @@ function teacher(){
 
    <div class="sec">How to read this report</div>
    <ul class="small" style="font-size:14px">
+     <li><b>What this is:</b> the detailed second-level evaluation. The S1 evaluation form asks about 10 basic questions; when the PG is still unsure (e.g. the student seems fast), the PG asks for this evaluation in any trial session. It covers reasoning, blocks, debugging, text code, typing and motivation, so every evaluator decides Upgrade or Same tier the same way.</li>
      <li><b>Points:</b> 2 = right on the first try, 1 = right on the second try, 0 = not right. Each question allows 2 tries; after that the answer is shown.</li>
      <li><b>What she did:</b> every option or block she tapped, in order, with the second it happened. "Changed" means she picked one answer, then another, before pressing Check. For typed answers, "corrected" shows the text before she deleted and what was left after deleting; "paused" shows where she stopped for more than 3 seconds, which usually shows the exact spot she was unsure about.</li>
      <li><b>Time:</b> from the question appearing to her final answer. "Paused" = time before her first tap or key.</li>
      <li><b>Accuracy:</b> how close her typing is to the target (100% = exact). <b>Chars/min:</b> characters typed per minute; ÷5 ≈ words per minute. <b>Keys pressed</b> above the length needed means she was correcting.</li>
      <li><b>Outcome rules:</b> Upgrade = all 8 checks, or all 3 T0 checks + 4 of 5 T1 checks + "Yes" to typing code. Advanced track = all T0 checks passed but not upgrade-ready (boredom risk). Same tier = a T0 skill still developing.</li>
-     <li>This is a 15-minute test: add what you saw live before recording the decision.</li>
+     <li>This is a 15-minute test: add what you saw live before recording the decision. The plan names who follows up: the new T1 instructor after an upgrade, or the current PG if she stays.</li>
    </ul>
 
    <div class="sec">Copy for notes</div>
