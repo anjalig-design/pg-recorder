@@ -389,27 +389,47 @@ function teacher(sendOnly){
   const blockDebug=Math.round((skills['Block concepts'].pts+skills['Debugging'].pts)/(skills['Block concepts'].max+skills['Debugging'].max)*100);
   const ageN=parseFloat(st.age);
 
-  let v,cls,why;
-  if(blockDebug>=80 && pyRight>=3 && codeAcc>=85 && reasoning>=70){
-    v='Upgrade case → T1 (MicroPython)';cls='up';
-    why=`Strong on blocks and debugging (${blockDebug}%), ${pyRight}/4 text-code answers right, code typing ${codeAcc}% accurate.`+(ageN&&ageN<9?` <b>Age ${st.age} is below the T1 band (9–10): wrong-alignment case — raise a ticket.</b>`:'');
-  } else if(blockDebug<50 || reasoning<40){
-    v='Needs support in T0';cls='sup';
-    why=`Blocks + debugging ${blockDebug}%, reasoning ${reasoning}%. T0 has no downgrade yet, so flag for learning support and watch closely.`;
-  } else if(blockDebug>=80 && pyRight>=2){
-    v='Borderline: same tier with stretch, or another session';cls='more';
-    const gaps=[pyRight<3?`text code ${pyRight}/4`:'',codeAcc<85?`code typing ${codeAcc}%`:'',reasoning<70?`harder puzzles ${reasoning}%`:''].filter(Boolean).join(', ');
-    why=`Block skills are strong (${blockDebug}%) and ${pyRight}/4 text answers are right (portal hint: 2+ suggests T1), but not solid yet on: ${gaps}. Check it live before deciding.`;
-  } else {
-    v='Same tier (T0), give stretch tasks';cls='same';
-    why=`Fits T0: blocks + debugging ${blockDebug}%, text code ${pyRight}/4, code typing ${codeAcc}%.`;
-  }
+  // ---- Clear decision: Upgrade only if EVERY T1-readiness check passes; otherwise Same tier. No downgrade. ----
+  const P=id=>get(id).points||0, OK=id=>!!get(id).correct;
+  const sum=ids=>ids.reduce((a,id)=>a+P(id),0);
+  const t2=get('e2').typing, t3=get('e3').typing;
+  const dTimes=['d1','d2','d3','d4'].map(id=>(get(id).ms||0)/1000);
+  const dAvg=Math.round(dTimes.reduce((a,b)=>a+b,0)/4);
+  const ans=id=>(get(id).answers||[]).join(' then ')||'no answer';
+  const gates=[
+   {name:'Strong reasoning',qs:'A1–A5',pass:sum(['a1','a2','a3','a4','a5'])>=7,detail:`${sum(['a1','a2','a3','a4','a5'])}/10 points (need 7)`},
+   {name:'Block coding mastered',qs:'B1–B5',pass:sum(['b1','b2','b3','b4','b5'])>=8,detail:`${sum(['b1','b2','b3','b4','b5'])}/10 points (need 8)`},
+   {name:'Debugs and uses variables',qs:'C1–C3',pass:sum(['c1','c2','c3'])>=5,detail:`${sum(['c1','c2','c3'])}/6 points (need 5)`},
+   {name:'Reads text-code logic',qs:'D2 loop, D3 if/else',pass:OK('d2')&&OK('d3'),detail:`D2: ${ans('d2')} · D3: ${ans('d3')}`},
+   {name:'Understands variables in text code',qs:'D1 x = 5, print(x + 3) → 8',pass:OK('d1'),detail:`Answered: ${ans('d1')}`},
+   {name:'Knows Python print syntax',qs:'D4 print("Hello")',pass:OK('d4'),detail:`Picked: ${ans('d4')}`},
+   {name:'Types code accurately',qs:'E2 print line, E3 for line',pass:!!(t2&&t3&&t2.accuracy>=85&&t3.accuracy>=85&&/print/.test(t2.typed)&&/:\s*$/.test(t3.typed)),detail:t2&&t3?`E2 ${t2.accuracy}%${/print/.test(t2.typed)?'':' (left out print)'} · E3 ${t3.accuracy}%${/:\s*$/.test(t3.typed)?'':' (left out the colon)'} (need 85% each, nothing missing)`:'not done'},
+   {name:'Comfortable with text code',qs:'D1–D4 time',pass:dAvg<=40,detail:`Average ${dAvg}s per question (need 40s or less)`},
+  ];
+  const passed=gates.filter(g=>g.pass).length;
+  const upgrade=passed===gates.length;
+  const v=upgrade?'UPGRADE to T1':'SAME TIER (T0)';
+  const cls=upgrade?'up':'same';
+  const failed=gates.filter(g=>!g.pass);
+  const coreWeak=sum(['b1','b2','b3','b4','b5','c1','c2','c3'])<8;
+  let why=upgrade
+    ? `Passed all ${gates.length} T1-readiness checks.`+(ageN&&ageN<9?` <b>Age ${esc(st.age)} is below the T1 band (9–10): raise a ticket.</b>`:'')
+    : `Passed ${passed} of ${gates.length} T1-readiness checks. Not ready yet on: ${failed.map(g=>g.name.toLowerCase()).join('; ')}.`+(coreWeak?' <b>Block basics are weak too: flag for learning support in T0.</b>':' Give stretch tasks on these and recheck later.');
+  const whyText=why.replace(/<[^>]+>/g,'');
 
   const rows=QUESTIONS.map(q=>{const r=get(q.id);const ans=(r.answers||[]).join(' | ');
     const pts=q.type==='survey'?'<span class="small">—</span>':`<span class="pill p${r.points||0}">${r.points||0}/2</span>`;
     return `<tr><td>${q.id.toUpperCase()}</td><td>${q.skill}</td><td>${esc(strip(q.q)).slice(0,60)}</td><td>${pts}</td><td>${r.attempts||0}</td><td>${r.ms?(r.ms/1000).toFixed(0)+'s':'—'}</td><td>${esc(ans).slice(0,70)}</td></tr>`}).join('');
 
-  const tyRows=ty.map(t=>`<tr><td class="mono">${esc(t.target)}</td><td class="mono">${esc(t.typed)}</td><td>${t.accuracy}%</td><td>${t.cpm}</td><td>${t.secs}s</td><td>${t.backspaces}</td><td>${t.exact?'Exact':(t.caseErr?'Capital letters':'')+(t.symbolsMissing?' Missing: '+esc(t.symbolsMissing):'')}</td></tr>`).join('');
+  const tyNote=t=>{if(t.exact)return'Exact';const n=[];
+    if(t.typed.replace(/\s+/g,' ').trim()===t.target)n.push('Only extra/missing spaces');
+    else if(t.caseErr)n.push('Capital letters');
+    const miss=t.target.split(/[^A-Za-z]+/).filter(w=>w&&!t.typed.includes(w));if(miss.length)n.push('Left out word: '+miss.join(', '));
+    if(t.symbolsMissing)n.push('Left out: '+t.symbolsMissing);
+    if(/\s{2,}/.test(t.typed)||t.typed!==t.typed.trim())n.push('Extra spaces');
+    return n.join(' · ')||'Small differences'};
+  const vis=s=>s.replace(/ /g,'·');
+  const tyRows=ty.map(t=>`<tr><td class="mono">${esc(t.target)}</td><td class="mono">${esc(vis(t.typed))}</td><td>${t.accuracy}%</td><td>${t.cpm}</td><td>${t.secs}s</td><td>${t.backspaces}</td><td>${esc(tyNote(t))}</td></tr>`).join('');
 
   const feel=['f1','f2','f3'].map(id=>(get(id).answers||[])[0]||'—');
   const slow=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).ms>45000).map(q=>q.id.toUpperCase());
@@ -418,21 +438,27 @@ function teacher(sendOnly){
   const report=[
    `Robot Brain Challenge — ${st.name}${st.age?' (age '+st.age+')':''}`,
    `Date: ${new Date(st.startedAt).toLocaleString()} · Time taken: ${totalMin} min`,
-   `Suggested: ${v}`,
+   `VERDICT: ${v} (T1 readiness ${passed}/${gates.length} checks)`,
+   whyText,
+   ...gates.map(g=>`${g.pass?'✅':'❌'} ${g.name} [${g.qs}]: ${g.detail}`),
+   ``,
    `Reasoning ${reasoning}% · Block concepts ${blocks}% · Debugging ${debug}% · Text code ${pyRight}/4 · Typing: ${plainCpm} chars/min plain, ${codeAcc}% accuracy on code`,
    `Avg time per question: ${avgThink}s${slow.length?' · Slow (>45s): '+slow.join(', '):''}`,
    `Feelings: ${feel[0]} · Hardest: ${feel[1]} · Wants to type code: ${feel[2]}`,
    ``,
    ...QUESTIONS.map(q=>{const r=get(q.id);return `${q.id.toUpperCase()} [${q.skill}] ${q.type==='survey'?'':(r.points||0)+'/2, '}tries ${r.attempts||0}, ${r.ms?(r.ms/1000).toFixed(0)+'s':'-'}: ${(r.answers||[]).join(' | ')}`}),
-   ...ty.map(t=>`Typing "${t.target}" → "${t.typed}" (${t.accuracy}%, ${t.cpm} cpm, ${t.backspaces} backspaces)`)
+   ...ty.map(t=>`Typing "${t.target}" → "${vis(t.typed)}" (${t.accuracy}%, ${t.cpm} cpm, ${t.backspaces} backspaces; ${tyNote(t)})`),
+   `(· = a space)`
   ].join('\n');
 
-  if(sendOnly) return {title:`Robot Brain Challenge: ${st.name}${st.age?' ('+st.age+')':''} - ${v}`, report};
+  if(sendOnly) return {title:`${st.name}${st.age?' ('+st.age+')':''}: ${v} - readiness ${passed}/${gates.length}`, report};
   document.getElementById('topbar').classList.add('hidden');
   stage.innerHTML=`
    <div class="t-h">Teacher report — ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
    <div class="t-sub">Finished in ${totalMin} min · Points: 2 = right first try, 1 = right on second try, 0 = not right</div>
-   <div class="verdict ${cls}"><h3>Suggested: ${v}</h3>${why}<div class="small" style="margin-top:6px">A hint, not a decision. Add what you saw live (independence, explaining, focus).</div></div>
+   <div class="verdict ${cls}"><h3>Verdict: ${v}</h3>${why}
+    <table style="margin-top:10px;background:#fff;border-radius:10px">${gates.map(g=>`<tr><td>${g.pass?'✅':'❌'}</td><td><b>${g.name}</b><br><span class="small">${g.qs}</span></td><td>${esc(g.detail)}</td></tr>`).join('')}</table>
+    <div class="small" style="margin-top:8px">Upgrade only when every check passes. Add what you saw live before you record it.</div></div>
    <div class="grid">
     <div class="kpi"><b>${reasoning}%</b><span>Reasoning (harder puzzles)</span></div>
     <div class="kpi"><b>${blocks}%</b><span>Block concepts</span></div>
