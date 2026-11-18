@@ -582,7 +582,7 @@ function analyse(){
   // plain-text report (sent to the teacher feed and shown for copying)
   const L=[];
   L.push(`ROBOT BRAIN CHALLENGE: ${st.name}${st.age?' (age '+st.age+')':''}`);
-  L.push(`Detailed second-level evaluation (PG unsure after the S1 form) · ${new Date(st.startedAt).toLocaleString()} · took ${totalMin} min · ${totalPts}/${totalMax} points`);
+  L.push(`${new Date(st.startedAt).toLocaleString()} · took ${totalMin} min · ${totalPts}/${totalMax} points`);
   L.push('');
   L.push(`OUTCOME: ${outcome}`);
   L.push(headline); L.push(reason); if(ageNote)L.push(ageNote);
@@ -631,7 +631,7 @@ function teacher(){
 
   stage.innerHTML=`
    <div class="t-h">Teacher report: ${esc(st.name)}${st.age?' · age '+esc(st.age):''}</div>
-   <div class="t-sub">Detailed second-level evaluation (used when the PG is still unsure after the S1 evaluation form) · ${new Date(st.startedAt).toLocaleString()} · took ${A.totalMin} min · ${A.totalPts}/${A.totalMax} points</div>
+   <div class="t-sub">${new Date(st.startedAt).toLocaleString()} · took ${A.totalMin} min · ${A.totalPts}/${A.totalMax} points</div>
 
    <div class="verdict ${A.cls}">
      <h3>${esc(A.outcome)}</h3>
@@ -694,7 +694,6 @@ function teacher(){
 
    <div class="sec">How to read this report</div>
    <ul class="small" style="font-size:14px">
-     <li><b>What this is:</b> the detailed second-level evaluation. The S1 evaluation form asks about 10 basic questions; when the PG is still unsure (e.g. the student seems fast), the PG asks for this evaluation in any trial session. It covers reasoning, blocks, debugging, text code, typing and motivation, so every evaluator decides Upgrade or Same tier the same way.</li>
      <li><b>Points:</b> 2 = right on the first try, 1 = right on the second try, 0 = not right. Each question allows 2 tries; after that the answer is shown.</li>
      <li><b>What she did:</b> every option or block she tapped, in order, with the second it happened. "Changed" means she picked one answer, then another, before pressing Check. For typed answers, "corrected" shows the text before she deleted and what was left after deleting; "paused" shows where she stopped for more than 3 seconds, which usually shows the exact spot she was unsure about.</li>
      <li><b>Time:</b> from the question appearing to her final answer. "Paused" = time before her first tap or key.</li>
