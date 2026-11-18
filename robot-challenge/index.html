@@ -228,7 +228,7 @@ function startScreen(resume){
 
 /* ---------- Keystroke tracker: corrections and pauses ----------
    fixes: each run of Backspace/Delete → text before and after deleting.
-   pauses: any gap over 3s between keys → what she had typed so far.   */
+   pauses: any gap over 3s between keys → what they had typed so far.   */
 function tracker(inp){
   const tr={fixes:[],pauses:[],last:null,delFrom:null};
   inp.addEventListener('keydown',e=>{
@@ -408,11 +408,11 @@ function correctText(q,name){
 function trail(q,r){
   if(!r||!r.log)return 'Not answered';
   if(q.type==='type'){const t=r.typing;if(!t)return 'Not answered';const m=mindText({fixes:t.fixes||[],pauses:t.pauses||[]});
-    return `Typed "${vis(t.typed)}"`+(r.firstMs>3000?` (waited ${secs(r.firstMs)}s before the first key)`:'')+(m?'. While typing she '+m:'. No corrections or long pauses')}
+    return `Typed "${vis(t.typed)}"`+(r.firstMs>3000?` (waited ${secs(r.firstMs)}s before the first key)`:'')+(m?'. While typing they '+m:'. No corrections or long pauses')}
   if(q.type==='match'){
     const wrongs=r.log.filter(e=>e.k==='pair'&&e.ok===false).map(e=>e.v);
     const sw=r.log.filter(e=>e.k==='switch').length;
-    return (wrongs.length?`Wrong pairs first: ${wrongs.join('; ')}. `:'No wrong pairs. ')+(sw?`Changed which block she picked ${sw} time${sw>1?'s':''}. `:'')+`Finished in ${secs(r.ms)}s.`;
+    return (wrongs.length?`Wrong pairs first: ${wrongs.join('; ')}. `:'No wrong pairs. ')+(sw?`Changed which block they picked ${sw} time${sw>1?'s':''}. `:'')+`Finished in ${secs(r.ms)}s.`;
   }
   const out=[]; let picks=[], steps=[], undos=0, edits='';
   r.log.forEach(e=>{
@@ -424,7 +424,7 @@ function trail(q,r){
       let s='';
       if(picks.length>1)s+=`tapped ${picks.join(' → ')} (changed ${picks.length-1}×), then `;
       if(undos)s+=`built step by step: ${steps.join(', ')}; then `;
-      if(edits)s+=`(while typing she ${edits}) `;
+      if(edits)s+=`(while typing they ${edits}) `;
       s+= q.type==='survey' ? `chose "${e.v}"` : `checked "${e.v}" ${e.ok?'✓ right':'✗ wrong'} at ${e.s}s`;
       out.push(s); picks=[]; steps=[]; undos=0; edits='';
     }
@@ -497,11 +497,11 @@ function analyse(){
   const checks=[
    {grp:'T0',name:'Strong reasoning',qs:'A1–A5',pass:sum(['a1','a2','a3','a4','a5'])>=7,detail:`${sum(['a1','a2','a3','a4','a5'])}/10 points (need 7)`,why:'T1 problems have more steps and are more abstract.'},
    {grp:'T0',name:'Block coding mastered',qs:'B1–B5',pass:sum(['b1','b2','b3','b4','b5'])>=8,detail:`${sum(['b1','b2','b3','b4','b5'])}/10 points (need 8)`,why:'T1 teaches the same ideas in text; they must be solid in blocks first.'},
-   {grp:'T0',name:'Debugs and uses variables',qs:'C1–C3',pass:sum(['c1','c2','c3'])>=5,detail:`${sum(['c1','c2','c3'])}/6 points (need 5)`,why:'Typed code breaks often; she must find mistakes herself. Variables appear from the start of T1.'},
-   {grp:'T1',name:'Reads text-code logic',qs:'D2 loop, D3 if/else',pass:OK('d2')&&OK('d3'),detail:`D2: ${ans('d2')} · D3: ${ans('d3')}`,why:'She must understand Python she is shown.'},
+   {grp:'T0',name:'Debugs and uses variables',qs:'C1–C3',pass:sum(['c1','c2','c3'])>=5,detail:`${sum(['c1','c2','c3'])}/6 points (need 5)`,why:'Typed code breaks often; they must find mistakes themselves. Variables appear from the start of T1.'},
+   {grp:'T1',name:'Reads text-code logic',qs:'D2 loop, D3 if/else',pass:OK('d2')&&OK('d3'),detail:`D2: ${ans('d2')} · D3: ${ans('d3')}`,why:'They must understand Python they are shown.'},
    {grp:'T1',name:'Variables in text code',qs:'D1 x = 5, print(x + 3) → 8',pass:OK('d1'),detail:`Answered: ${ans('d1')}`,why:'These are the first lines of T1; everything builds on them.'},
    {grp:'T1',name:'Python print syntax',qs:'D4 print("Hello")',pass:OK('d4'),detail:`Picked: ${ans('d4')}`,why:'Typed code must be exact; blocks fit together on their own, text does not.'},
-   {grp:'T1',name:'Types code accurately',qs:'E2 print line, E3 for line',pass:!!(t2&&t3&&t2.accuracy>=85&&t3.accuracy>=85&&/print/.test(t2.typed)&&/:\s*$/.test(t3.typed)),detail:t2&&t3?`E2 ${t2.accuracy}%${/print/.test(t2.typed)?'':' (left out print)'} · E3 ${t3.accuracy}%${/:\s*$/.test(t3.typed)?'':' (left out the colon)'} (need 85% each, nothing missing)`:'not done',why:'A missing word or colon stops the program; she would spend class fixing typos.'},
+   {grp:'T1',name:'Types code accurately',qs:'E2 print line, E3 for line',pass:!!(t2&&t3&&t2.accuracy>=85&&t3.accuracy>=85&&/print/.test(t2.typed)&&/:\s*$/.test(t3.typed)),detail:t2&&t3?`E2 ${t2.accuracy}%${/print/.test(t2.typed)?'':' (left out print)'} · E3 ${t3.accuracy}%${/:\s*$/.test(t3.typed)?'':' (left out the colon)'} (need 85% each, nothing missing)`:'not done',why:'A missing word or colon stops the program; they would spend class fixing typos.'},
    {grp:'T1',name:'Comfortable with text code',qs:'D1–D4 time',pass:dAvg<=40,detail:`Average ${dAvg}s per question (need 40s or less)`,why:'Very slow reading means falling behind the class.'},
   ];
   const t0Pass=checks.filter(c=>c.grp==='T0').every(c=>c.pass);
@@ -515,15 +515,15 @@ function analyse(){
   if(t0Pass && t1Passed===5){
     outcome='UPGRADE to T1';cls='up';
     headline='Ready for T1: passed all 8 checks.';
-    reason='She has every skill T1 uses daily: solid T0 skills, and she can read, write and type simple Python.';
+    reason='They have every skill T1 uses daily: solid T0 skills, and they can read, write and type simple Python.';
   } else if(t0Pass && t1Passed>=4 && wantsYes){
     outcome='UPGRADE to T1 (with support)';cls='up';
     headline=`Close to ready (${passed}/8) and keen to type code.`;
-    reason=`All T0 skills are strong and only one T1 skill is missing (${list(failed)}). She answered "${want}" to typing real code, so the risk of boredom in T0 is higher than the risk of struggling in T1.`;
+    reason=`All T0 skills are strong and only one T1 skill is missing (${list(failed)}). They answered "${want}" to typing real code, so the risk of boredom in T0 is higher than the risk of struggling in T1.`;
   } else if(t0Pass){
     outcome='SAME TIER (T0), advanced track';cls='adv';
     headline=`Strong in T0, not ready for T1 yet (${passed}/8 checks).`;
-    reason=`She passed all 3 T0 checks but missed ${5-t1Passed} of 5 T1 checks (${list(failed)}).`+(t1Passed>=4?` She answered "${want}" to typing real code, so upgrading now risks frustration.`:' Moving her up now would mean struggling in every class.')+' Because she is strong in T0, the main risk here is BOREDOM: she needs extra challenge every class.';
+    reason=`They passed all 3 T0 checks but missed ${5-t1Passed} of 5 T1 checks (${list(failed)}).`+(t1Passed>=4?` They answered "${want}" to typing real code, so upgrading now risks frustration.`:' Moving them up now would mean struggling in every class.')+' Because they are strong in T0, the main risk here is BOREDOM: they need extra challenge every class.';
   } else {
     outcome='SAME TIER (T0)';cls='same';
     headline=`Stay in T0 at the normal pace (${passed}/8 checks).`;
@@ -531,25 +531,25 @@ function analyse(){
   }
   if(cls==='up'){
     risk='Too hard: struggling with typed code in the first few classes.';
-    plan=['Attach this report to the tier-change ticket so the new T1 instructor knows her strengths and gaps before her first T1 class.',`T1 instructor: extra help with typing and syntax in her first 2–3 T1 classes${failed.length?' (especially: '+list(failed)+')':''}.`,'T1 instructor: start with quick wins so she feels successful early, and check her confidence after each of the first classes.'];
+    plan=['Attach this report to the tier-change ticket so the new T1 instructor knows their strengths and gaps before their first T1 class.',`T1 instructor: extra help with typing and syntax in their first 2–3 T1 classes${failed.length?' (especially: '+list(failed)+')':''}.`,'T1 instructor: start with quick wins so they feel successful early, and check their confidence after each of the first classes.'];
     signs=['Not finishing tasks','Frustration or going quiet','Camera off / disengaged','Parent says it is too hard'];
-    parent=`"${st.name} is ready for the next level. We will support her through the first few classes of typed code."`;
+    parent=`"${st.name} is ready for the next level. We will support them through the first few classes of typed code."`;
   } else if(cls==='adv'){
     risk='Too easy: boredom, which can lead to cancelling.';
-    plan=['Current PG: a bonus mission every class: same project with a twist (shake, tilt, A+B, a counter, if/else, or her own idea).',`Bridge to T1: show the JavaScript/Python view of her blocks in MakeCode a few minutes each week${failed.some(c=>c.name==='Types code accurately')?', plus short typing practice':''}.`,'Recognition: give her the challenge first and let her show her solution to the class.',`Work on her T1 gaps inside T0: ${list(failed)}.`];
+    plan=['Current PG: a bonus mission every class: same project with a twist (shake, tilt, A+B, a counter, if/else, or their own idea).',`Bridge to T1: show the JavaScript/Python view of their blocks in MakeCode a few minutes each week${failed.some(c=>c.name==='Types code accurately')?', plus short typing practice':''}.`,'Recognition: give them the challenge first and let them show them solution to the class.',`Work on their T1 gaps inside T0: ${list(failed)}.`];
     signs=['Finishes early and sits idle','Says it is easy or boring','Camera off / distracted','Parent asks for more challenge'];
-    parent=`"${st.name} is one of the strongest in her group, so she will get extra challenges every class and start seeing real code."`;
+    parent=`"${st.name} is one of the strongest in their group, so they will get extra challenges every class and start seeing real code."`;
   } else {
     risk=coreWeak?'Too hard even in T0: frustration.':'Low: normal T0 pace.';
     plan=coreWeak?[`Learning support on: ${list(failed.filter(c=>c.grp==='T0'))}.`,'Small steps and frequent praise.','PG checks understanding at the end of each task.']:['Follow the normal T0 plan.',`Practise: ${list(failed.filter(c=>c.grp==='T0'))||'—'}.`];
     signs=coreWeak?['Not finishing tasks','Frustration or going quiet','Parent says it is too hard']:['Losing interest','Not finishing tasks'];
-    parent=`"${st.name} is building strong foundations in block coding and we will keep growing her skills step by step."`;
+    parent=`"${st.name} is building strong foundations in block coding and we will keep growing their skills step by step."`;
   }
   const ageNote = (cls==='up' && ageN && ageN<9) ? `Age ${st.age} is below the T1 band (9–10): raise a tier-change ticket.` : (ageN&&ageN>=9&&cls!=='up'?`Age ${st.age} is above the T0 band (7–8): check the age alignment.`:'');
   const safety = cls==='up'
-    ? 'Who watches: the new T1 instructor, in her first T1 classes. If the warning signs show in 2 classes, raise a ticket to review the placement.'
-    : 'Who watches: her current PG, in her next classes. If the warning signs show in 2 classes, raise a ticket to review the placement.';
-  const who = cls==='up' ? 'the new T1 instructor' : 'her current PG';
+    ? 'Who watches: the new T1 instructor, in their first T1 classes. If the warning signs show in 2 classes, raise a ticket to review the placement.'
+    : 'Who watches: their current PG, in their next classes. If the warning signs show in 2 classes, raise a ticket to review the placement.';
+  const who = cls==='up' ? 'the new T1 instructor' : 'their current PG';
 
   // behaviour notes
   const tries2=QUESTIONS.filter(q=>scored(q)&&q.type!=='type'&&get(q.id).attempts===2).map(q=>q.id.toUpperCase());
@@ -568,13 +568,13 @@ function analyse(){
   const progMin=lineSec?Math.max(1,Math.round(lineSec*10/60)):null;   // a 10-line program
   const F=n=>checks.find(c=>c.name===n);
   const future=[];
-  if(!F('Variables in text code').pass)future.push({c:'Variables (x = 5, print(x + 3))',impact:'T1 starts with storing and printing values. She will not follow what a program does, and will copy code without understanding it.',todo:'In T0: use variable blocks often and ask "what number will it show?" before running. Show the same code in MakeCode Python view.'});
-  if(!F('Python print syntax').pass)future.push({c:'Python syntax (print("…"), quotes, brackets)',impact:'Frequent errors such as SyntaxError and NameError from Print with a capital P, missing quotes or brackets. She will need the PG to fix her code, and confidence drops.',todo:'Weekly MakeCode text view; spot-the-mistake games with 2–3 short lines of Python.'});
-  if(!F('Types code accurately').pass)future.push({c:'Typing code accurately',impact:`Missing words or the colon stop the program from running. ${codeCpm?`At her code typing speed (~${codeCpm} chars/min) one line takes about ${lineSec}s and a 10-line program about ${progMin} min just to type,`:'Slow typing means'} so she would finish fewer tasks than the class.`,todo:'5 minutes of typing practice a few times a week (letters, then brackets, quotes and colons).'});
-  if(!F('Comfortable with text code').pass)future.push({c:'Reading speed in text code',impact:'She would fall behind the class pace and may switch off.',todo:'Short read-the-code warm-ups at the start of T0 classes.'});
-  if(!F('Reads text-code logic').pass)future.push({c:'Reading loops and if/else in text',impact:'She would not be able to predict what code does or find her own mistakes in T1.',todo:'Show each block program next to its Python version and ask what it will do.'});
+  if(!F('Variables in text code').pass)future.push({c:'Variables (x = 5, print(x + 3))',impact:'T1 starts with storing and printing values. They will not follow what a program does, and will copy code without understanding it.',todo:'In T0: use variable blocks often and ask "what number will it show?" before running. Show the same code in MakeCode Python view.'});
+  if(!F('Python print syntax').pass)future.push({c:'Python syntax (print("…"), quotes, brackets)',impact:'Frequent errors such as SyntaxError and NameError from Print with a capital P, missing quotes or brackets. They will need the PG to fix their code, and confidence drops.',todo:'Weekly MakeCode text view; spot-the-mistake games with 2–3 short lines of Python.'});
+  if(!F('Types code accurately').pass)future.push({c:'Typing code accurately',impact:`Missing words or the colon stop the program from running. ${codeCpm?`At their code typing speed (~${codeCpm} chars/min) one line takes about ${lineSec}s and a 10-line program about ${progMin} min just to type,`:'Slow typing means'} so they would finish fewer tasks than the class.`,todo:'5 minutes of typing practice a few times a week (letters, then brackets, quotes and colons).'});
+  if(!F('Comfortable with text code').pass)future.push({c:'Reading speed in text code',impact:'They would fall behind the class pace and may switch off.',todo:'Short read-the-code warm-ups at the start of T0 classes.'});
+  if(!F('Reads text-code logic').pass)future.push({c:'Reading loops and if/else in text',impact:'They would not be able to predict what code does or find their own mistakes in T1.',todo:'Show each block program next to its Python version and ask what it will do.'});
   checks.filter(c=>c.grp==='T0'&&!c.pass).forEach(c=>future.push({c:c.name+' (T0 skill)',impact:'This is a T0 foundation; without it even T0 projects will feel hard, and T1 would be much harder.',todo:'Focus here first in T0, with small steps and praise.'}));
-  if(!future.length)future.push({c:'No major gaps found',impact:`She should cope with typed code. ${codeCpm?`Typing about ${codeCpm} chars/min: a 10-line program takes ~${progMin} min to type.`:''}`,todo:'Watch the first 2–3 T1 classes for frustration and give quick wins.'});
+  if(!future.length)future.push({c:'No major gaps found',impact:`They should cope with typed code. ${codeCpm?`Typing about ${codeCpm} chars/min: a 10-line program takes ~${progMin} min to type.`:''}`,todo:'Watch the first 2–3 T1 classes for frustration and give quick wins.'});
   const totalPts=sections.reduce((a,s)=>a+s.pts,0), totalMax=sections.reduce((a,s)=>a+s.max,0);
   const feel=['f1','f2','f3'].map(id=>(get(id).answers||[])[0]||'—');
   const ty=[t1,t2,t3].filter(Boolean);
@@ -596,19 +596,19 @@ function analyse(){
   L.push('TELL THE PARENT: '+parent);
   L.push('');
   L.push('SECTIONS: '+sections.map(s=>`${s.name} ${s.pts}/${s.max} (${s.first}/${s.n} right first try)`).join(' · '));
-  L.push(`HOW SHE WORKED: avg ${avgThink}s per question`+(tries2.length?` · needed 2 tries: ${tries2.join(', ')}`:'')+(changed.length?` · changed her answer before checking: ${changed.join(', ')}`:'')+(slow.length?` · slow (>45s): ${slow.join(', ')}`:'')+(hesit.length?` · long pause before starting (>20s): ${hesit.join(', ')}`:''));
+  L.push(`HOW THEY WORKED: avg ${avgThink}s per question`+(tries2.length?` · needed 2 tries: ${tries2.join(', ')}`:'')+(changed.length?` · changed their answer before checking: ${changed.join(', ')}`:'')+(slow.length?` · slow (>45s): ${slow.join(', ')}`:'')+(hesit.length?` · long pause before starting (>20s): ${hesit.join(', ')}`:''));
   L.push(`SPEED: answered ${pace} questions per minute (${rightFirst}/${nonType.length} right first try)`+(t1?` · plain typing ${t1.cpm} chars/min (~${t1.wpm} words/min)`:'')+(codeCpm?` · code typing ${codeCpm} chars/min → ~${lineSec}s per line of Python, ~${progMin} min for a 10-line program`:''));
   L.push(`FEELINGS: ${feel[0]} · hardest: ${feel[1]} · wants to type code: ${feel[2]}`);
   L.push('');
-  L.push(cls==='up'?'WHAT TO EXPECT IN T1 (typed code):':'IF SHE MOVED TO T1 (typed code) NOW:');
+  L.push(cls==='up'?'WHAT TO EXPECT IN T1 (typed code):':'IF THEY MOVED TO T1 (typed code) NOW:');
   future.forEach(f=>L.push(`• ${f.c}: ${f.impact} → To do: ${f.todo}`));
   L.push('');
   L.push('QUESTION BY QUESTION (points: 2 = right first try, 1 = right on 2nd try, 0 = not right):');
   QUESTIONS.forEach(q=>{const r=get(q.id);
-    L.push(`${q.id.toUpperCase()} ${q.sec}${scored(q)?' · '+(r.points||0)+'/2':''} · ${secs(r.ms)}s — tests: ${q.tests}. ${q.type!=='survey'?'Answer: '+correctText(q,st.name)+'. ':''}She: ${trail(q,r)}`)});
+    L.push(`${q.id.toUpperCase()} ${q.sec}${scored(q)?' · '+(r.points||0)+'/2':''} · ${secs(r.ms)}s — tests: ${q.tests}. ${q.type!=='survey'?'Answer: '+correctText(q,st.name)+'. ':''}Student: ${trail(q,r)}`)});
   L.push('');
   L.push('TYPING (· = a space):');
-  ty.forEach(t=>L.push(`"${t.target}" → "${vis(t.typed)}": ${t.accuracy}% accurate, ${t.cpm} chars/min (~${t.wpm} words/min), ${t.secs}s, ${t.keys} keys for ${t.needed} characters, ${t.backspaces} backspaces; ${tyNote(t)}`+((t.fixes||[]).length||(t.pauses||[]).length?`. Her thinking: ${mindText({fixes:t.fixes||[],pauses:t.pauses||[]})}`:'')));
+  ty.forEach(t=>L.push(`"${t.target}" → "${vis(t.typed)}": ${t.accuracy}% accurate, ${t.cpm} chars/min (~${t.wpm} words/min), ${t.secs}s, ${t.keys} keys for ${t.needed} characters, ${t.backspaces} backspaces; ${tyNote(t)}`+((t.fixes||[]).length||(t.pauses||[]).length?`. Their thinking: ${mindText({fixes:t.fixes||[],pauses:t.pauses||[]})}`:'')));
 
   return {title:`${st.name}${st.age?' ('+st.age+')':''}: ${outcome} - ${passed}/8 checks`, report:L.join('\n'),
     outcome,cls,headline,reason,ageNote,who,pace,rightFirst,nonTypeN:nonType.length,codeCpm,lineSec,progMin,future,risk,plan,signs,parent,safety,checks,passed,sections,tries2,changed,slow,hesit,avgThink,totalMin,totalPts,totalMax,feel,ty,get};
@@ -642,7 +642,7 @@ function teacher(){
 
    <div class="sec">The 8 checks <span class="small">(upgrade needs all 8, or 4 of the 5 T1 checks plus "Yes" to typing code)</span></div>
    <div style="overflow:auto"><table>
-     <tr><th></th><th>Check</th><th>Questions</th><th>Her result</th><th>Why it matters</th></tr>
+     <tr><th></th><th>Check</th><th>Questions</th><th>Their result</th><th>Why it matters</th></tr>
      ${A.checks.map(c=>`<tr><td>${c.pass?'✅':'❌'}</td><td><b>${c.name}</b><div class="small">${c.grp} skill</div></td><td class="small">${esc(c.qs)}</td><td>${esc(c.detail)}</td><td class="small">${esc(c.why)}</td></tr>`).join('')}
    </table></div>
 
@@ -667,16 +667,16 @@ function teacher(){
      ${A.codeCpm?`<div class="kpi"><b>${A.codeCpm}</b><span>Chars/min typing code</span></div><div class="kpi"><b>~${A.lineSec}s</b><span>To type one line of Python (~25 chars)</span></div><div class="kpi"><b>~${A.progMin} min</b><span>To type a 10-line T1 program</span></div>`:''}
    </div>
 
-   <div class="sec">${A.cls==='up'?'What to expect in T1 (typed code)':'If she moved to T1 (typed code) now'}</div>
+   <div class="sec">${A.cls==='up'?'What to expect in T1 (typed code)':'If they moved to T1 (typed code) now'}</div>
    <div style="overflow:auto"><table>
      <tr><th>Challenge</th><th>Impact in class</th><th>What to do</th></tr>
      ${A.future.map(f=>`<tr><td><b>${esc(f.c)}</b></td><td>${esc(f.impact)}</td><td>${esc(f.todo)}</td></tr>`).join('')}
    </table></div>
 
-   <div class="sec">How she worked</div>
+   <div class="sec">How they worked</div>
    <ul class="small" style="font-size:15px">
      <li>Needed a second try: ${A.tries2.join(', ')||'none'}</li>
-     <li>Changed her answer before pressing Check: ${A.changed.join(', ')||'none'}</li>
+     <li>Changed their answer before pressing Check: ${A.changed.join(', ')||'none'}</li>
      <li>Slow (over 45s): ${A.slow.join(', ')||'none'}</li>
      <li>Long pause before starting (over 20s): ${A.hesit.join(', ')||'none'}</li>
      <li>Felt: ${esc(A.feel[0])} · Hardest part: ${esc(A.feel[1])}</li>
@@ -684,22 +684,22 @@ function teacher(){
 
    <div class="sec">Question by question</div>
    <div style="overflow:auto"><table>
-     <tr><th>#</th><th>What it tests</th><th>Correct answer</th><th>What she did</th><th>Points</th><th>Time</th></tr>${qRows}
+     <tr><th>#</th><th>What it tests</th><th>Correct answer</th><th>What they did</th><th>Points</th><th>Time</th></tr>${qRows}
    </table></div>
 
    <div class="sec">Typing</div>
    <div style="overflow:auto"><table>
-     <tr><th>Target</th><th>She typed (· = space)</th><th>Accuracy</th><th>Chars/min</th><th>Time</th><th>Keys pressed</th><th>Backspaces</th><th>What was wrong</th><th>Her thinking (corrections, pauses over 3s)</th></tr>${tyRows}
+     <tr><th>Target</th><th>Typed (· = space)</th><th>Accuracy</th><th>Chars/min</th><th>Time</th><th>Keys pressed</th><th>Backspaces</th><th>What was wrong</th><th>Their thinking (corrections, pauses over 3s)</th></tr>${tyRows}
    </table></div>
 
    <div class="sec">How to read this report</div>
    <ul class="small" style="font-size:14px">
      <li><b>Points:</b> 2 = right on the first try, 1 = right on the second try, 0 = not right. Each question allows 2 tries; after that the answer is shown.</li>
-     <li><b>What she did:</b> every option or block she tapped, in order, with the second it happened. "Changed" means she picked one answer, then another, before pressing Check. For typed answers, "corrected" shows the text before she deleted and what was left after deleting; "paused" shows where she stopped for more than 3 seconds, which usually shows the exact spot she was unsure about.</li>
-     <li><b>Time:</b> from the question appearing to her final answer. "Paused" = time before her first tap or key.</li>
-     <li><b>Accuracy:</b> how close her typing is to the target (100% = exact). <b>Chars/min:</b> characters typed per minute; ÷5 ≈ words per minute. <b>Keys pressed</b> above the length needed means she was correcting.</li>
+     <li><b>What they did:</b> every option or block they tapped, in order, with the second it happened. "Changed" means they picked one answer, then another, before pressing Check. For typed answers, "corrected" shows the text before they deleted and what was left after deleting; "paused" shows where they stopped for more than 3 seconds, which usually shows the exact spot they were unsure about.</li>
+     <li><b>Time:</b> from the question appearing to their final answer. "Paused" = time before their first tap or key.</li>
+     <li><b>Accuracy:</b> how close their typing is to the target (100% = exact). <b>Chars/min:</b> characters typed per minute; ÷5 ≈ words per minute. <b>Keys pressed</b> above the length needed means they were correcting.</li>
      <li><b>Outcome rules:</b> Upgrade = all 8 checks, or all 3 T0 checks + 4 of 5 T1 checks + "Yes" to typing code. Advanced track = all T0 checks passed but not upgrade-ready (boredom risk). Same tier = a T0 skill still developing.</li>
-     <li>This is a 15-minute test: add what you saw live before recording the decision. The plan names who follows up: the new T1 instructor after an upgrade, or the current PG if she stays.</li>
+     <li>This is a 15-minute test: add what you saw live before recording the decision. The plan names who follows up: the new T1 instructor after an upgrade, or the current PG if they stay.</li>
    </ul>
 
    <div class="sec">Copy for notes</div>
